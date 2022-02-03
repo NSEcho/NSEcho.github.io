@@ -1,0 +1,313 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>mutiny fuzzer</title>
+        <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+        
+        <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
+        
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        
+        <link href="../css/styles.css" rel="stylesheet" />
+    </head>
+    <body>
+        
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="../index.html">Home</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../about.html">About</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <header class="masthead" style="background-image: url('../assets/img/post-bg.jpg');">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>mutiny fuzzer</h1>
+                            <h2 class="subheading">Fuzzing the network with mutiny fuzzer</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">lateralusd</a>
+                                on 2021-10-19 09:29:40
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7 ct">
+                        <h2>Introduction</h2>
+
+<p><a href="https://github.com/Cisco-Talos/mutiny-fuzzer">mutiny</a> is a network fuzzer which uses radamsa to generate mutations. It is really simple to use, either with the captured pcap file or with the <a href="https://github.com/Cisco-Talos/Decept">decept</a> proxy.</p>
+
+<p>In this post we will be looking at the captured pcap file and how to utilize mutiny with it.</p>
+
+<p>Basic steps for fuzzing with mutiny:
+* Setup(prepare pcap file or utilize decept)
+	* In case of pcap, prepare the fuzzing file
+* Modify fuzzer file
+* Start the mutiny fuzzer
+* Wait and hope</p>
+
+<h2>Vulnerable binary</h2>
+
+<p>We are gonna use simple go program with provides us with the HTTP server. Program expects the user to provide it with the id in request, which will then be used to access the certain element from the array.</p>
+
+<h3>Basic communication</h3>
+
+<pre><code class="language-bash">$ go run main.go
+2021/10/19 09:46:21 Connection from [::1]:61819
+2021/10/19 09:46:21 Got request for id 15
+2021/10/19 09:46:21 got: element15
+</code></pre>
+
+<pre><code class="language-bash">$ curl 'http://localhost:8090/?id=15'
+element15
+</code></pre>
+
+<h3>Setup</h3>
+
+<p>I will use the tcpdump in order to generate the pcap file.</p>
+
+<pre><code class="language-bash">$ sudo tcpdump -i lo0 -v -p -w vuln.pcap port 8090
+</code></pre>
+
+<p>In another tab in terminal, let&rsquo;s generate some traffic by making the request to the &lsquo;<a href="http://localhost:8089/?id=15'">http://localhost:8089/?id=15&rsquo;</a>. After we are done you should see the message inside the tcpdump <code>Got 12</code> or some other number, if you see <code>Got 0</code> you did something wrong and make sure to fix your tcpdump capturing.</p>
+
+<p>After we captured it, we can just stop the tcpdump and move to the next stage.</p>
+
+<h3>Preparing the fuzzing file</h3>
+
+<p>Copy the <code>vuln.pcap</code> file inside the mutiny directory.</p>
+
+<p>Call the <code>mutiny_prep</code> script with the generated pcap file and answer the default questions, later on you can focus on each one individually but for now defaults are ok.</p>
+
+<pre><code class="language-bash">$ cp /tmp/vuln.pcap ~/mutiny_fuzzer/
+$ python mutiny_prep vuln.pcap
+[ ... REDACTED ... ]
+
+Wrote .fuzzer file: vuln-0.fuzzer
+
+
+Do you want to generate a .fuzzer for another message number? (y/n)
+Default n:
+
+All files have been written.
+</code></pre>
+
+<p>We can see that the file <code>vuln-0.fuzzer</code> has been created which will we modify in the next stage.</p>
+
+<h2>Modify .fuzzer file</h2>
+
+<p>Once you open up the .fuzzer file in your text editor, at the top you will see some options, you can modify them later if you want. We will focus on the actual message in the fuzzer file.</p>
+
+<p>My fuzzer file looks like this:</p>
+
+<pre><code class="language-bash">$ cat vuln-0.fuzzer
+# Directory containing any custom exception/message/monitor processors
+# This should be either an absolute path or relative to the .fuzzer file
+# If set to &quot;default&quot;, Mutiny will use any processors in the same
+# folder as the .fuzzer file
+processor_dir default
+# Number of times to retry a test case causing a crash
+failureThreshold 3
+# How long to wait between retrying test cases causing a crash
+failureTimeout 5
+# How long for recv() to block when waiting on data from server
+receiveTimeout 1.0
+# Whether to perform an unfuzzed test run before fuzzing
+shouldPerformTestRun 1
+# Protocol (udp or tcp)
+proto tcp
+# Port number to connect to
+port 8090
+# Port number to connect from
+sourcePort -1
+# Source IP to connect from
+sourceIP 0.0.0.0
+
+# The actual messages in the conversation
+# Each contains a message to be sent to or from the server, printably-formatted
+outbound fuzz 'GET /?id=15 HTTP/1.1\r\nHost: localhost:8090\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n'
+inbound 'HTTP/1.1 200 OK\r\nDate: Tue, 19 Oct 2021 07:51:00 GMT\r\nContent-Length: 9\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nelement15'
+</code></pre>
+
+<p>Our goal is to fuzz the actual number that gets sent to the server, but in order to do so we need to take a look at the actual commands inside the fuzzer file.</p>
+
+<h3>Fuzzer commands</h3>
+
+<ul>
+<li>outbound - message is outbound, from the client to the server</li>
+<li>inbound - what is expected from the server</li>
+<li>sub - when you want to break certain message in multiple lines</li>
+<li>fuzz - which part to fuzz</li>
+</ul>
+
+<p>So in order to fuzz this actual message, we will use this:</p>
+
+<pre><code>outbound 'GET /?id='
+sub fuzz '15'
+sub ' HTTP/1.1\r\nHost: localhost:8090\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n'
+inbound 'HTTP/1.1 200 OK\r\nDate: Tue, 19 Oct 2021 07:51:00 GMT\r\nContent-Length: 9\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nelement15'
+</code></pre>
+
+<p>Modify the fuzzer file like I did above and it is now time to start the actual fuzzing.</p>
+
+<h2>Start the mutiny fuzzer</h2>
+
+<p>Use the format: <code>python mutiny.py &lt;fuzzerFile&gt; &lt;serverAddr&gt;</code></p>
+
+<p>In our case, it is gonna be:</p>
+
+<pre><code class="language-bash">$ python mutiny.py --logAll vuln-0.fuzzer 127.0.0.1
+Performing test run without fuzzing...
+	Sent 84 byte packet
+	Received 125 bytes
+Logging run number -1
+
+** Sleeping for 0.000 seconds **
+
+
+Fuzzing with seed 0
+	Sent 84 byte packet
+	Received 193 bytes
+Logging run number 0
+
+** Sleeping for 0.000 seconds **
+
+
+Fuzzing with seed 1
+	Sent 121 byte packet
+Logging run number 1
+Server has closed the connection
+Run aborted: Server closed connection: Server has closed the connection
+
+** Sleeping for 0.000 seconds **
+
+
+Fuzzing with seed 2
+Logging run number 2
+[Errno 61] Connection refused
+Received LogLastAndHaltException, logging last run and halting
+Logging run number 1
+</code></pre>
+
+<p>Immediately after we have run it, we can see below that we got <code>Connection refused</code>, in network fuzzing situations that is actually a good sign, meaning that you crashed the service.</p>
+
+<p>If we take a look at the vulnerable binary running, we can see what is going on.</p>
+
+<pre><code>[ ... REDACTED ... ]
+2021/10/19 10:09:34 Connection from 127.0.0.1:62181
+2021/10/19 10:09:34 Got request for id 340282366920938463463374607431768211457
+panic: runtime error: index out of range [9223372036854775807] with length 1000
+
+goroutine 1 [running]:
+main.main()
+	/Users/daemon1/tools/wrong_srv/main.go:31 +0x1b5
+</code></pre>
+
+<p>We can see that we caused the out of bounds access for the array. But we won&rsquo;t always have the output of the fuzzed binary, we will only have information is it alive or not so how could we know what is the actual payload that caused this to happen. The answer lies in the logs file of mutiny.</p>
+
+<p>If we take a look at the mutiny output we can see that the last seed used was 2, so  inside <code>vuln-0_logs</code> we should find the value of this seed.</p>
+
+<pre><code class="language-bash">$ cat vuln-0_logs/2021-10-19,100934/2
+Log from run with seed 2
+Error message: LogAll
+Failed to connect on this run.
+
+Packet 0: outbound fuzz 'GET /?id=15 HTTP/1.1\r\nHost: localhost:8090\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n'
+Fuzzed Packet 0: fuzz outbound 'GET /?id=340282366920938463463374607431768211457 HTTP/1.1\r\nHost: localhost:8090\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n'
+
+
+Packet 1: inbound 'HTTP/1.1 200 OK\r\nDate: Tue, 19 Oct 2021 07:51:00 GMT\r\nContent-Length: 9\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nelement15'
+</code></pre>
+
+<p>We can see that inside the file, we can see the line <strong>Fuzzed Packet 0:</strong> wit the line <strong>GET /?id=340282366920938463463374607431768211457</strong>. So, in order to replicate this, we can use the same id.</p>
+
+<p>Let&rsquo;s start the server again, and issue the request to this id.</p>
+
+<pre><code class="language-bash">$ # server
+$ go run main.go
+2021/10/19 10:12:44 Connection from [::1]:62229
+2021/10/19 10:12:44 Got request for id 340282366920938463463374607431768211457
+panic: runtime error: index out of range [9223372036854775807] with length 1000
+
+goroutine 1 [running]:
+main.main()
+	/Users/daemon1/tools/wrong_srv/main.go:31 +0x1b5
+</code></pre>
+
+<pre><code class="language-bash">$ # request
+$ curl 'http://localhost:8090/?id=340282366920938463463374607431768211457'
+curl: (52) Empty reply from server
+</code></pre>
+
+<p>We can see that we crashed the server successfully and that should be it. Using this simple fuzzing example, you can know fuzz all kinds of service. Decept is also worth to look at, as it can immediately generate the fuzzer file.</p>
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        
+        
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <li class="list-inline-item">
+                                <a href="%5c#">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://www.github.com/lateralusd">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; lateralusd 2022</div>
+                        <div class="small text-center text-muted fst-italic">Made with <a href="https://github.com/lateralusd/bloggy">bloggy</a></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <style>
+            .ct > p img {
+                height: 100%;
+                width: 100%;
+            }
+        </style>
+
+        
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <script src="../js/scripts.js"></script>
+    </body>
+</html>

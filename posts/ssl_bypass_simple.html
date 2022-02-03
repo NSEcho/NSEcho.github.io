@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
         <meta name="description" content="" />
         <meta name="author" content="" />
-        <title>Fun RCE with PHP upload</title>
+        <title>SSL pinning is not that hard... sometimes</title>
         <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
         
         <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
@@ -39,12 +39,12 @@
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <div class="post-heading">
-                            <h1>Fun RCE with PHP upload</h1>
-                            <h2 class="subheading">500 Internal Error sometimes can be good</h2>
+                            <h1>SSL pinning is not that hard... sometimes</h1>
+                            <h2 class="subheading">Bypassing SSL pinning</h2>
                             <span class="meta">
                                 Posted by
                                 <a href="#!">lateralusd</a>
-                                on 2020-08-17 13:09:06
+                                on 2021-02-22 17:22:16
                             </span>
                         </div>
                     </div>
@@ -56,53 +56,27 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7 ct">
-                        <h2>Introduction</h2>
+                        <h1>Introduction</h1>
 
-<p>I know this is not about MacOS nor iOS but this was something that had to be written.</p>
+<p>Recently I was pentesting an iOS application which of course had SSL pinning enables. For those who are not familiar what is SSL pinning, let&rsquo;s take description from <a href="https://thesslstore.com">https://thesslstore.com</a>:</p>
 
-<p>Recently I had a web application penetration test on which I have found CSV injection and a great example of bypassing PHP image upload. Users with admin privileges had an option to change user&rsquo;s profile picture which immediately caught my eye.</p>
+<blockquote>
+<p>Pinning is an optional mechanism that can be used to improve the security of a service or site that relies on SSL Certificates. Pinning allows you to specify a cryptographic identity that should be accepted by users visiting your site.</p>
+</blockquote>
 
-<h2>App details</h2>
+<p>Basically, SSL pinning is checking to see whether the application is communicating with the right server. SSL pinning is an obstacle that has to be removed if you want to intercept the request which application is making.</p>
 
-<ul>
-<li>Fictional hostname: example.com</li>
-<li>Language: PHP</li>
-<li>Framework: Laravel</li>
-</ul>
+<p>Some of the common methods to bypass SSL pinning are using <a href="https://github.com/sensepost/objection">objection</a> or using <a href="https://github.com/nabla-c0d3/ssl-kill-switch2">SSL Kill Switch 2</a>.</p>
 
-<h2>Analysis</h2>
+<h1>Bypassing</h1>
 
-<p>After messing around with trying to upload some php shell I was constantly getting 500 Internal Server Error which was kinda a clue to me that application is not allowing anything besides good ol&rsquo; images.</p>
+<p>This was all done on my iPhone running iOS version 14.4 nonjailbroken so immediately SSL Kill Switch 2 is not an option because it is working only on jailbroken devices and we are left with objection.</p>
 
-<p>Application is storing images on the server by generating random id and combining it with file extension. It gets stored at <strong><a href="http://example.com/images/users/ID.EXTENSION">http://example.com/images/users/ID.EXTENSION</a></strong>.</p>
+<p>After patching the application with FridaGadget inside(you can read how to do it <a href="/frida_patching/">here</a>) we can use objection.</p>
 
-<p>Example: <strong><a href="http://example.com/images/users/1191723995f3a343b45e2d9.82154619.jpg">http://example.com/images/users/1191723995f3a343b45e2d9.82154619.jpg</a></strong></p>
+<pre><code>$ objection -g Gadget explore
 
-<h2>Attack</h2>
-
-<p>I first have tried to upload php file and change its filename to name.gif.php and embeding some PHP code without success. File gets uploaded as php but without execution which can be seen on following image.</p>
-
-<p><img src="../images/burp_rce.png" alt="Request with GIF87a;" /></p>
-
-<p>After inspecting elements, I saw that file got saved as <strong>864064135f3a686e303ab8.04907479.php</strong>, after checking with browser the location I saw only GIF87a; on the page.</p>
-
-<p><img src="../images/first_try.png" alt="Output of image" /></p>
-
-<p>The thing which caught my attention was 500 Internal Server Error even though the file got uploaded.</p>
-
-<p>The next thing i have tried is removing completely <em>GIF87a;</em>, changing mime type to <strong>application/x-httpd-php</strong> and filename just to <strong>.gif.php</strong>. Application stripped .gif and saved php file, inspecting the element and checking the URL I saw that PHP file really got executed. Once again I got 500 Internal Server Error but the file got uploaded so I didn&rsquo;t really care.</p>
-
-<p><img src="../images/execution.png" alt="Sending payload" /></p>
-
-<p><img src="../images/php_execution.png" alt="Execution" /></p>
-
-<p>Changing the body to <code>&lt;?php system($_GET[&quot;cmd&quot;]); ?&gt;</code>, uploading the file, getting the URL I have proceeded to get file <strong>/etc/passwd/</strong> with success and it is game over.</p>
-
-<p><img src="../images/passwd.png" alt="Output of /etc/passwd file" /></p>
-
-<h2>Point of the post</h2>
-
-<p>Do not get discouraged if you get internal server error, try to mess around and play with everything you see. You never know what the application is doing when you are blackboxing.</p>
+</code></pre>
 
                     </div>
                 </div>

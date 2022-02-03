@@ -1,0 +1,370 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Buggy lldb fuzzer</title>
+        <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+        
+        <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
+        
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        
+        <link href="../css/styles.css" rel="stylesheet" />
+    </head>
+    <body>
+        
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="../index.html">Home</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../about.html">About</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <header class="masthead" style="background-image: url('../assets/img/post-bg.jpg');">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Buggy lldb fuzzer</h1>
+                            <h2 class="subheading">How can we fuzz with lldb and python</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">lateralusd</a>
+                                on 2021-10-21 22:39:17
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7 ct">
+                        <h2>Introduction</h2>
+
+<p>Today I will try to walk you through some of the lldb functionalities which could be helpful to fuzz the target binary and we will end it with the small script which could be further extended. The script is on my github, so feel free to make PR request with the changes you think are needed.</p>
+
+<p>Anyway, let&rsquo;s start it by first showing you our target binary.</p>
+
+<h2>Breakpoints and parameter modification</h2>
+
+<pre><code class="language-c">#include &lt;unistd.h&gt;
+#import &lt;Foundation/Foundation.h&gt;
+
+int main(void) {
+	for (;;) {
+		NSString * aa = [NSString stringWithFormat:@&quot;%@ =&gt; %@&quot;, @&quot;something&quot;, @&quot;else&quot;];
+		NSLog(@&quot;String is %@&quot;, aa);
+		sleep(3);
+	}
+	return 0;
+}
+</code></pre>
+
+<p>When we run the binary it will forever print <strong>String is something  =&gt; else</strong> like we can see below.</p>
+
+<p><img src="../images/sample_run.png" alt="Running the binary" /></p>
+
+<p>My goal is to change the parameter &ldquo;something&rdquo; to some other word.</p>
+
+<p>Let&rsquo;s load the binary inside the lldb and make a breakpoint on the wanted function, in our case <code>+[NSString stringWithFormat:]</code>.</p>
+
+<pre><code class="language-bash">(lldb) target create ./sample
+Current executable set to '/Users/daemon1/sample' (x86_64).
+(lldb) rbreak stringWithFormat
+Breakpoint 1: 2 locations.
+(lldb) breakpoint list
+Current breakpoints:
+1: regex = 'stringWithFormat', locations = 2
+  1.1: where = Foundation`+[NSString stringWithFormat:], address = Foundation[0x00007fff21150196], unresolved, hit count = 0
+  1.2: where = Foundation`+[NSString stringWithFormat:locale:], address = Foundation[0x00007fff2133fbc8], unresolved, hit count = 0
+</code></pre>
+
+<p>I am using <code>rbreak</code> which sets up the breakpoint on the specified regex.</p>
+
+<p>If we run our binary now, we will see soon that we hit our breakpoint.</p>
+
+<p><img src="../images/initial_hitting.png" alt="Hitting the breakpoint" /></p>
+
+<p>On the x86_64 architecture, parameters are passed as following:
+* First argument - rdi
+* Second argument - rsi
+* Third argument - rdx
+* Forth argument - rcx
+* Fifth argument - r8
+* Sixth argument - r9
+* More than six arguments - on the stack</p>
+
+<p>If we were now to inspect our registers, we would see something odd, let&rsquo;s see what it is. We can use <code>po $rdi</code> which will call method <code>description</code> on the address that is inside the rdi register.</p>
+
+<pre><code class="language-bash">(lldb) po $rdi
+NSString
+</code></pre>
+
+<p>If you were expecting <code>@&quot;%@ =&gt; %@&quot;</code> inside the rdi register, you are wrong. The reason why you are wrong is that the messages in Objective c are all passed using <code>objc_msgSend</code> function which accepts the parameters:
+1. The class
+2. The selector of the method
+3. Variadic - Selector parameters</p>
+
+<p>Once we get that out of the way, the next logical thing to expect is that we will see <code>stringWithFormat:</code> inside the rsi register.</p>
+
+<pre><code class="language-bash">(lldb) po $rsi
+140735269523590
+</code></pre>
+
+<p>And we don&rsquo;t, we can see some garbage. Maybe if we try to cast it to something else, it would be more meaningful.</p>
+
+<pre><code class="language-bash">(lldb) po (SEL)$rsi
+&quot;stringWithFormat:&quot;
+</code></pre>
+
+<p>And now we can confirm that inside the rsi register is indeed the method that we are calling. So, we can conclude that the content of the registers will be:</p>
+
+<ul>
+<li>$rdx - @&ldquo;%@ =&gt; %@&rdquo;</li>
+<li>$rcx - @&ldquo;something&rdquo;</li>
+<li>$r8 - @&ldquo;else&rdquo;</li>
+</ul>
+
+<p><img src="../images/reg_content.png" alt="Register content" /></p>
+
+<p>I said earlier that I want to change the parameter <em>@&ldquo;something&rdquo;</em> into some other word. In order to do that, we need to overwrite our current $rcx which now holds the address of @&ldquo;something&rdquo;.</p>
+
+<p>I will use <code>breakpoint command</code> to automate the taks, but let&rsquo;s first create the variable which will hold our new value.</p>
+
+<p><img src="../images/expr_new_value.png" alt="New value created" /></p>
+
+<p>We can see that we have created new NSString which holds <em>@&ldquo;some new value&rdquo;</em> inside of it, and we can see that it&rsquo;s address is <em>0x00000001007040a0</em>.</p>
+
+<p>This is the address we need to write inside of our $rcx register.</p>
+
+<p><code>breakpoint command</code> gets executed each time the breakpoint is hit and each time the breakpoint is hit, we want to replace it with the address of our new value.</p>
+
+<p><img src="../images/breakpoint_command.png" alt="Creating new command" /></p>
+
+<p><code>continue</code> means continue the execution without stopping when we hit the breakpoint.</p>
+
+<p>If we type <code>continue</code> now, we will hopefully see new output.</p>
+
+<p><img src="../images/overwritten_rcx.png" alt="Successful overwrite" /></p>
+
+<p>And congrats, we have successfully changed the value, but if you take a look at this, you can see that it is pretty boring, all the time the same value. That is exactly what we are gonna do next, implement some kind of algorithm to change the value each time.</p>
+
+<h2>Fuzzing with python script</h2>
+
+<p>Playing with lldb would be boring if there wasn&rsquo;t python API. I won&rsquo;t go over all the details inside the script, but will cover the main functionalities and how we can extend it to be more general and perhaps to find some new bugs.</p>
+
+<p>The script can be found at <a href="https://github.com/lateralusd/BuggyLLDBFuzzer">BuggyLLDBFuzzer repo</a>. I called it buggy because I am not an expert on this and generally in python so therefore the name.</p>
+
+<p>I will first demonstrate how it works, and then we will walk over the script, so grab the script and load the target binary to lldb. I like to keep all of my script inside the <code>~/lldb-scripts/</code> directory.</p>
+
+<pre><code class="language-bash">$ mkdir ~/lldb-scripts
+$ git clone https://github.com/lateralusd/BuggyLLDBFuzzer.git ~/lldb-scripts/BuggyLLDBFuzzer
+$ lldb ./sample
+</code></pre>
+
+<p>In order to use any script inside our binary, we first need to import it, we are doing that with <code>command script import /path/to/the/script.py</code>. After we have loaded our script, we can use it. Primitive fuzzing with the script can be seen on the screenshot below.</p>
+
+<p><img src="../images/fuzzing.png" alt="Fuzzing with the script" /></p>
+
+<p>You just call the <code>fuzz</code> command passing the function/method you want to fuzz, in our case it is <code>stringWithFormat:</code>, you also pass initial input and argument number. Remember that the 4th parameter is <code>@&quot;something&quot;</code> and that is the one we want to change/fuzz.</p>
+
+<h3>Internals</h3>
+
+<p>Let&rsquo;s analyze the script.</p>
+
+<pre><code class="language-python">import lldb
+import shlex
+from datetime import datetime
+</code></pre>
+
+<p>The first thing we can see are imports, the main module is <strong>lldb</strong>, <strong>shlex</strong> is used to split command line arguments, and <strong>datetime</strong> will be used for our algo.</p>
+
+<p>Further below we can see:</p>
+
+<pre><code class="language-python">input = None
+addr = None
+arg_num = None
+
+reg_name = {
+    '1': 'rdi',
+    '2': 'rsi',
+    '3': 'rdx',
+    '4': 'rcx',
+    '5': 'r8',
+    '6': 'r9'
+}
+</code></pre>
+
+<ul>
+<li><em>input</em> will hold the original input that we will fuzz</li>
+<li><em>arg</em> will hold the address of our NSMutableString which will hold the fuzzed value which will be sent to the function</li>
+<li>_arg<em>num</em> determines function parameter</li>
+<li><em>arg_num</em> will determine which register we need to use to overwrite the value.</li>
+</ul>
+
+<p>Next we can see:</p>
+
+<pre><code class="language-python">def __lldb_init_module(debugger, internal_dict):
+    debugger.HandleCommand('command script add -f BuggyLLDBFuzzer.fuzz fuzz')
+</code></pre>
+
+<p>These two lines define a function called __lldb_init_module which will get called as soon as we import our script.</p>
+
+<p>The reason we need this is because it is not enough just to import the script and it will magically work, we need to actually tell which function will be available to us by using <code>command script add -f</code>. It accepts two parameters:
+* ScriptName.function - function we will map to
+* what it will be map to</p>
+
+<p>Meaning, as soon as we import our script, <code>command script add -f BuggyLLDBFuzzer.fuzz fuzz</code> will be called and we can interact with it using the new <code>fuzz</code> command.</p>
+
+<p>Then we come to the real meat of the script:</p>
+
+<pre><code class="language-python">def fuzz(debugger, command, result, internal_dict):
+    global input
+    global addr
+    global arg_num
+    args = shlex.split(command)
+
+    func = args[0]
+    input = args[1]
+    arg_num = args[2]
+
+    # create the NSMutableString holding our initial input that will get mutated
+    command = r'''
+        @import Foundation;
+        NSMutableString *fuzzd = (NSMutableString*)[[NSMutableString alloc] init];
+        [fuzzd setString:@&quot;{}&quot;];
+
+        fuzzd;
+    '''.format(input)
+    expr = &quot;expression -lobjc -O -- &quot; + command
+
+    res = executeCommand(command)
+    addr = res.GetAddress()
+
+    target = debugger.GetSelectedTarget()
+    breakpoint = target.BreakpointCreateByRegex(func)
+    breakpoint.SetScriptCallbackFunction(&quot;BuggyLLDBFuzzer.handle&quot;)
+</code></pre>
+
+<p>Function fuzz is responsible for:
+* getting input from the user and mapping it to our global variables
+* creating the NSMutableString which will hold the fuzzed value that is gonna be sent to the function
+* obtaining the address of the newly created NSMutableString and saving it to the global <code>addr</code> variable
+* setting up a breakpoint</p>
+
+<p>So, if we call it like <code>fuzz stringWithFormat randomInput 4</code>, our global variables will be:
+* input = &ldquo;randomInput&rdquo;
+* addr = could not be known before we run it
+* arg_num = 4</p>
+
+<p>In order to setup the breakpoint, we first need to obtain the SBTarget type variable from the debugger, by calling <code>debugger.GetSelectedTarget()</code>. Then we setup the breakpoint on the function we passed to the <code>fuzz</code> command (the first parameter). After that we define the handler by calling <code>breakpoint.SetScriptCallbackFunction(&quot;BuggyLLDBFuzzer.handle&quot;). Each time the breakpoint is hit, our</code>handle` function will be called.</p>
+
+<p>Our function <code>handle</code> looks like:</p>
+
+<pre><code class="language-python">def handle(frame, bp_loc, dict):
+    thread = frame.GetThread()
+    process = thread.GetProcess()
+    debugger = process.GetTarget().GetDebugger()
+    interpreter = debugger.GetCommandInterpreter()
+
+    debugger.SetAsync(False)
+
+    fuzzd = algo()
+
+    # Write new value inside our NSMutableString
+    ret = lldb.SBCommandReturnObject()
+    expr = 'expression -lobjc -- (NSMutableString*)[' + str(addr) + ' setString:@&quot;' + fuzzd + '&quot;]'
+    interpreter.HandleCommand(expr, ret)
+
+    reg = reg_name[arg_num]
+
+    # Fill the argument accordingly
+    ret_value = lldb.SBCommandReturnObject()
+    expression = 'register write ' + reg + ' ' + str(addr)
+    interpreter.HandleCommand(expression, ret_value)
+
+    return False
+</code></pre>
+
+<p>First we obtain couple of objects in order to get the lldb.SBCommandInterpreter which will we use to execute our command.</p>
+
+<p>We then setup the debugger into <code>sync</code> mode, meaning dont return to the lldb until we are done.</p>
+
+<p>We get the new value by calling <code>algo()</code> function which you can implement however you want.</p>
+
+<p>Then we put the new string at our NSMutableString created inside the <code>fuzz()</code> function and we let the interpreter execute the command.</p>
+
+<p>We obtain the register we need to write it to based on the paremeter number.</p>
+
+<p>The last step is to write the address of NSMutableString into the correct register(reg variable).</p>
+
+<p>The reason why we are using two different ways to execute commands is that in the first case we want to get the lldb.SBValue so we can get it its address and in the latter we just need to execute, no need for some kind of confirmation.</p>
+
+<p>And basically, that is it, small fuzzing skeleton using python lldb API. If you have any question and I am sure you will have, create a github issue so I can update the README or this blog post. If you want to develop this further into some more general fuzzer, feel free to work on it and do PR.</p>
+
+<p><a href="https://github.com/lateralusd/BuggyLLDBFuzzer">BuggyLLDBFuzzer repo</a></p>
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        
+        
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <li class="list-inline-item">
+                                <a href="%5c#">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://www.github.com/lateralusd">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; lateralusd 2022</div>
+                        <div class="small text-center text-muted fst-italic">Made with <a href="https://github.com/lateralusd/bloggy">bloggy</a></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <style>
+            .ct > p img {
+                height: 100%;
+                width: 100%;
+            }
+        </style>
+
+        
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <script src="../js/scripts.js"></script>
+    </body>
+</html>

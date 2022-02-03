@@ -1,0 +1,272 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Radare2 and iOS Apps</title>
+        <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+        
+        <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
+        
+        <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+        
+        <link href="../css/styles.css" rel="stylesheet" />
+    </head>
+    <body>
+        
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="../index.html">Home</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../about.html">About</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <header class="masthead" style="background-image: url('../assets/img/post-bg.jpg');">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Radare2 and iOS Apps</h1>
+                            <h2 class="subheading">Analyzing the iOS applications using radare2</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">lateralusd</a>
+                                on 2021-04-14 20:46:23
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7 ct">
+                        <h2>Introduction</h2>
+
+<p>I have always wanted to use <a href="https://github.com/radareorg/radare2">radare2</a> for reverse engineering. For those unfamiliar with radare2 it is basically like IDA or Ghidra but more cool. And for the debugging and analyzing applications, I have used all kinds of different tools but with r2 it feels like I have it all there needed.</p>
+
+<p>Per Wikipedia page:
+&gt; Radare2 (also known as r2) is a complete framework for reverse-engineering and analyzing binaries; composed of a set of small utilities that can be used together or independently from the command line.</p>
+
+<p>I will be doing the exact some analysis like in <a href="https://lateralusd.github.io/jailbreak_bypass/">Jailbreak Bypass</a> post but will do everything with r2 except for signing part.</p>
+
+<h2>Loading the binary</h2>
+
+<p>Extract your binary from the ipa file and pass it to the <code>r2</code> binary.</p>
+
+<pre><code class="language-bash">$ r2 original_binary
+ -- radare2 is power, France is pancake.
+[0x100005490]&gt;
+</code></pre>
+
+<h2>Interface and method analysis</h2>
+
+<p>We will approach this in two ways:
+* Getting straight to the class
+* Getting the class name from the method name</p>
+
+<h3>Getting straight to the class</h3>
+
+<p>Since we are now in the r2, the <code>i</code> command is the main information command, and if we type <code>i?</code> we will see further commands.</p>
+
+<p>So let&rsquo;s type <code>i?</code> and see if there is anything classes related using the <code>~ class</code> which is equivalent to <code>| grep class</code> inside the shell.</p>
+
+<pre><code>[0x100005490]&gt; i? ~ class
+| ic                 List classes, methods and fields
+| icc                List classes, methods and fields in Header Format
+| icg                List classes as agn/age commands to create class hirearchy graphs
+| icq                List classes, in quiet mode (just the classname)
+| icqq               List classes, in quieter mode (only show non-system classnames)
+</code></pre>
+
+<p>So we can see that we have have the <code>ic</code> command which lists classes, methods and fields. Let&rsquo;s use it and grep for our <code>RootCheckResult</code>.</p>
+
+<pre><code>[0x100005490]&gt; ic ~ RootCheckResult
+0x100469788 [0x100005bc8 - 0x100005c48]    128 class 0 RootCheckResult :: NSObject
+</code></pre>
+
+<p>Now, if we pass just the name of the class to the <code>ic</code> we will get it&rsquo;s methods.</p>
+
+<pre><code>[0x100005490]&gt; ic RootCheckResult
+class RootCheckResult
+0x100005bc8 method RootCheckResult      init
+0x100005c24 method RootCheckResult      isRooted
+0x100005c2c method RootCheckResult      setIsRooted:
+0x100005c34 method RootCheckResult      rootCheckFailed
+0x100005c3c method RootCheckResult      setRootCheckFailed:
+0x100005c48 method RootCheckResult      .cxx_destruct
+</code></pre>
+
+<p>We can see that our <code>isRooted</code> method is indeed inside of RootCheckResult class.</p>
+
+<h3>Getting the class name from the method name</h3>
+
+<p>In this approach we will do the same as we did in the original post, by trying to find the method responsible for root check. To shorten our time, let&rsquo;s say we now that the method <code>isRooted</code> is the one we are after. So let&rsquo;s see how to that exactly.</p>
+
+<p>First let&rsquo;s find the address of the <code>isRooted</code> method.</p>
+
+<pre><code>[0x100005490]&gt; ic ~ isRooted
+0x100005c24 method 1      isRooted
+</code></pre>
+
+<p>We have found our <code>isRooted</code> method at the address of <em>0x100005c24</em> so let&rsquo;s seek to that address using the <code>s</code> command and dump 10 bytes from that address.</p>
+
+<pre><code>[0x100005490]&gt; s 0x100005c24
+[0x100005c24]&gt; pd 10$$
+            ;-- func.100005c24:
+            ;-- method.RootCheckResult.isRooted:
+            0x100005c24      00204039       ldrb w0, [x0, 8]           ; [0x8:4]=-1 ; 8
+            0x100005c28      c0035fd6       ret
+            ;-- func.100005c2c:
+            ;-- method.RootCheckResult.setIsRooted::
+            0x100005c2c      02200039       strb w2, [x0, 8]
+            0x100005c30      c0035fd6       ret
+            ;-- func.100005c34:
+</code></pre>
+
+<p>We can see by the comments that the method <code>isRooted</code> is inside the <code>RootCheckResult</code> interface.</p>
+
+<p>This method of searching is called cross referencing or XREFs.</p>
+
+<h2>Patching</h2>
+
+<p>Copy your binary and load the copied one into the r2 with write mode.</p>
+
+<pre><code>$ cp original_binary copy_binary
+$ r2 -w copy_binary
+</code></pre>
+
+<p>Let&rsquo;s seek to our <code>isRooted</code> method and disassemble it.</p>
+
+<pre><code>[0x100005490]&gt; ic ~ isRooted
+0x100005c24 method 1      isRooted
+[0x100005c24]&gt; s 0x100005c24
+[0x100005c24]&gt; pd 2$$
+            ;-- func.100005c24:
+┌ 8: method.RootCheckResult.isRooted (int64_t arg1);
+│ bp: 0 (vars 0, args 0)
+│ sp: 0 (vars 0, args 0)
+│ rg: 1 (vars 0, args 1)
+│           0x100005c24      00204039       ldrb w0, [x0, 8]           ; [0x8:4]=-1 ; 8 ; arg1
+└           0x100005c28      c0035fd6       ret
+</code></pre>
+
+<p>We can see that we are loading our <em>w0</em> return register from the <em>x0 + 8</em> address.</p>
+
+<p>So let&rsquo;s change that instruction to always return 0 meaning that the device is not rooted.</p>
+
+<p>To do that, we will use <code>w</code> command. Let&rsquo;s see our options for the command.</p>
+
+<pre><code>[0x100005490]&gt; w?
+Usage: w[x] [str] [&lt;file] [&lt;&lt;EOF] [@addr]
+| w[1248][+-][n]       increment/decrement byte,word..
+| w foobar             write string 'foobar'
+| w0 [len]             write 'len' bytes with value 0x00
+| w6[de] base64/hex    write base64 [d]ecoded or [e]ncoded string
+| wa[?] push ebp       write opcode, separated by ';' (use '&quot;' around the command)
+| waf f.asm            assemble file and write bytes
+| waF f.asm            assemble file and write bytes and show 'wx' op with hexpair bytes of assembled code
+| wao[?] op            modify opcode (change conditional of jump. nop, etc)
+| wA[?] r 0            alter/modify opcode at current seek (see wA?)
+| wb 010203            fill current block with cyclic hexpairs
+</code></pre>
+
+<p>We can notice that we have <code>wao</code> command which is exactly what we want.</p>
+
+<pre><code>[0x100005490]&gt; wao?
+| wao [op]  performs a modification on current opcode
+| wao nop   nop current opcode
+| wao jinf  assemble an infinite loop
+| wao jz    make current opcode conditional (zero)
+| wao jnz   make current opcode conditional (not zero)
+| wao ret1  make the current opcode return 1
+| wao ret0  make the current opcode return 0
+| wao retn  make the current opcode return -1
+| wao nocj  remove conditional operation from branch (make it unconditional)
+| wao trap  make the current opcode a trap
+| wao recj  reverse (swap) conditional branch instruction
+| WIP:      not all archs are supported and not all commands work on all archs
+</code></pre>
+
+<p>We can notice the command <code>wao ret0</code> which makes the <em>current</em> opcode return 1. Since we are already on that instruction we don&rsquo;t need to seek any further.</p>
+
+<pre><code>[0x100005c24]&gt; wao ret0
+Written 8 byte(s) (mov x0, 0,,ret) = wx 000080d2c0035fd6
+[0x100005c24]&gt; pd 2$$
+            ;-- func.100005c24:
+┌ 8: method.RootCheckResult.isRooted (int64_t arg1);
+│ bp: 0 (vars 0, args 0)
+│ sp: 0 (vars 0, args 0)
+│ rg: 1 (vars 0, args 1)
+│           0x100005c24      000080d2       movz x0, 0                 ; arg1
+└           0x100005c28      c0035fd6       ret
+</code></pre>
+
+<p>After writing and disassembling we can see that we no longer see ldrb instruction but instead loading 0 into the x0 register.</p>
+
+<p>Quit radare, copy the binary into the Payload directory, zip it, sign it and install on your device.</p>
+
+<p>This was really short introduction to radare and jailbreak bypass and will for sure publish some posts regarding radare. I hope you like it :)</p>
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        
+        
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <li class="list-inline-item">
+                                <a href="%5c#">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://www.github.com/lateralusd">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; lateralusd 2022</div>
+                        <div class="small text-center text-muted fst-italic">Made with <a href="https://github.com/lateralusd/bloggy">bloggy</a></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <style>
+            .ct > p img {
+                height: 100%;
+                width: 100%;
+            }
+        </style>
+
+        
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <script src="../js/scripts.js"></script>
+    </body>
+</html>
