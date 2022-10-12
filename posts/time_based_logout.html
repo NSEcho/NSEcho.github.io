@@ -1,0 +1,256 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    
+        <title>Frida and time-based logout</title>
+        <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+    
+    
+    <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
+    
+    <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+    
+    
+        <link href="../css/styles.css" rel="stylesheet" />
+    
+</head>
+
+    <body>
+        
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="../index.html">Home</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../about.html">About</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../pages/exploits.html">Vulnerabilities</a></li>
+                        
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <header class="masthead" style="background-image: url('../assets/img/post-bg.jpg');">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Frida and time-based logout</h1>
+                            <h2 class="subheading">Bypassing application logout with frida</h2>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">lateralusd</a>
+                                on 2022-10-12 14:33:01
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7 ct">
+                        <h1>Introduction</h1>
+
+<p>Last couple of days, I had to do the penetration test of an iOS application. I first had to deal with the bypassing encryption, turned out it used just good old <code>CCCrypt</code> for which I have created a small <a href="https://codeshare.frida.re/@lateralusd/cccrypt/">script</a>.</p>
+
+<p>While analyzing the application, I have noticed that every couple of seconds I get logged out. Because I was annoyed by it, I have decided to bypass it.</p>
+
+<h2>Analyzing and bypassing</h2>
+
+<p>The first thing that happens during the logout is that <code>UIAlertController</code> is presented with the message <em>&ldquo;Your session has expired. Please log in again!&rdquo;</em>.</p>
+
+<p>Steps to create UIAlertController are:</p>
+
+<ul>
+<li>Create <code>UIAlertController</code></li>
+<li>Create <code>UIAlertAction</code></li>
+<li>Call <code>-[UIAlertController addAction:]</code></li>
+</ul>
+
+<p>The idea was to intercept <code>-[UIAlertController addAction:]</code> and once I am there, I will print the backtrace. The frida script to intercept the method and show the stacktrace is shown below.</p>
+
+<pre><code class="language-js">var addAction = ObjC.classes.UIAlertController[&quot;- addAction:&quot;].implementation;
+
+Interceptor.attach(addAction, {
+	onEnter: function(args) {
+		console.log(&quot;Showing alert&quot;);
+		console.log(&quot;Got called from\n&quot; +
+			Thread.backtrace(this.context, Backtracer.ACCURATE)
+        			.map(DebugSymbol.fromAddress).join('\n') + '\n');
+	},
+	onLeave: function(args) {
+
+	}
+})
+</code></pre>
+
+<p>After a couple of minutes, backtrace is shown inside the frida:</p>
+
+<pre><code class="language-bash">$ frida -U &quot;Test APP&quot; -l /tmp/script.js
+[iPhone::Test App ]-&gt; Showing alert
+Got called from
+0x18f8352f4 UIKitCore!-[UIAlertView _prepareAlertActions]
+0x18f8359ac UIKitCore!-[UIAlertView _setIsPresented:]
+0x18f836274 UIKitCore!-[UIAlertView _showAnimated:]
+0x10250b8a8 /private/var/containers/Bundle/Application/XXXXXXXXXXXXXXXXXXXXXXXXX/Test App.app/Test App!-[AppDelegate showMessage:messageType:]
+0x10250be8c /private/var/containers/Bundle/Application/XXXXXXXXXXXXXXXXXXXXXXXXX/Test App.app/Test App!-[AppDelegate idleTimerExceeded]
+0x18c598030 Foundation!__NSFireTimer
+0x18c12d03c CoreFoundation!__CFRUNLOOP_IS_CALLING_OUT_TO_A_TIMER_CALLBACK_FUNCTION__
+0x18c12cd78 CoreFoundation!__CFRunLoopDoTimer
+0x18c12c448 CoreFoundation!__CFRunLoopDoTimers
+0x18c127584 CoreFoundation!__CFRunLoopRun
+0x18c126adc CoreFoundation!CFRunLoopRunSpecific
+0x1960ac328 GraphicsServices!GSEventRunModal
+0x190221ae0 UIKitCore!UIApplicationMain
+0x102511cc4 Test App!0x2dcc4 (0x10002dcc4)
+0x18bfb0360 libdyld.dylib!start
+
+
+</code></pre>
+
+<p>We can notice that <code>-[AppDelegate idleTimerExceeded]</code> calls <code>-[AppDelegate showMessage:messageType:]</code> which in turns shows us our alert.</p>
+
+<p>Loading the app in the Hopper and inspecting the <code>- idleTimerExceeded</code> showed us that the application does the following:</p>
+
+<pre><code> r0 = self;
+    var_20 = r22;
+    stack[-40] = r21;
+    r31 = r31 + 0xffffffffffffffd0;
+    var_10 = r20;
+    stack[-24] = r19;
+    saved_fp = r29;
+    stack[-8] = r30;
+    r29 = &amp;saved_fp;
+    if (*(int8_t *)(int64_t *)&amp;r0-&gt;logedIn != 0x0) {
+            r19 = r0;
+            if (*(int8_t *)(int64_t *)&amp;r0-&gt;connecting == 0x0) {
+                    r0 = [UIApplication sharedApplication];
+                    r0 = [r0 retain];
+                    r21 = [[r0 windows] retain];
+                    [r19 checkViews:r21];
+                    [r21 release];
+                    [r0 release];
+                    [r19 logedOut:r19 withAnimation:0x0];
+                    [[Language get:@&quot;AppDelegate.label.inactivityError&quot;] retain];
+                    [r19 showMessage:r2 messageType:r3];
+                    [r20 release];
+            }
+    }
+    return;
+</code></pre>
+
+<p>Flow:</p>
+
+<ul>
+<li>Prepare the basic variable</li>
+<li>Check if the user is logged in</li>
+<li>If the user is logged in, log out the user and show the alert</li>
+<li>If the user is not logged in, just return</li>
+</ul>
+
+<p>So, in order to bypass this, we just needs to set <code>logedIn</code> to 0x1(false) and we have successfully bypassed the check. Final script and the run are shown below:</p>
+
+<pre><code>$ cat /tmp/bypass.js
+var idleTimerExceeded = ObjC.classes.AppDelegate[&quot;- idleTimerExceeded&quot;].implementation;
+
+Interceptor.attach(idleTimerExceeded, {
+        onEnter: function(args) {
+                console.log(&quot;[*] Inside the idleTimerExceeded method&quot;);
+                var appDelegate = ObjC.Object(args[0]); // Create object from args[0] -&gt; AppDelegate
+                appDelegate.$ivars.logedIn = false; // Set the logedIn variable to false
+        },
+        onLeave: function(retval) {
+
+        }
+})
+$ frida -U &quot;Test App&quot; -l /tmp/bypass.js
+[iPhone::Test App ]-&gt; [*] Inside the idleTimerExceeded method
+[iPhone::Test App ]-&gt;
+[iPhone::Test App ]-&gt; var delegate = ObjC.classes.UIApplication.sharedApplication().delegate();
+[iPhone::Test App ]-&gt; delegate.$ivars.logedIn
+false
+[iPhone::Test App ]-&gt;
+
+</code></pre>
+
+<p>After the method got called, we have set <code>logedIn</code> to false in order to bypass the check and this way I wont be logged out again every couple of minutes.</p>
+
+                    </div>
+                </div>
+            </div>
+        </article>
+        
+        
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <li class="list-inline-item">
+                                <a href="%5c#">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://www.github.com/lateralusd">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="mailto:xdaemonx@protonmail.com">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fas fa-envelope fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://lateralusd.github.io//index.xml">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; lateralusd 2022</div>
+                        <div class="small text-center text-muted fst-italic">Made with <a href="https://github.com/lateralusd/bloggy">bloggy</a></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <style>
+            .ct > p img {
+                height: 100%;
+                width: 100%;
+            }
+        </style>
+
+        
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <script src="../js/scripts.js"></script>
+    </body>
+</html>
