@@ -12,6 +12,9 @@
         <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
     
     
+        
+    
+    
     <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
     
     <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
@@ -19,6 +22,7 @@
     
     
         <link href="../css/styles.css" rel="stylesheet" />
+        <link href="../css/prism.css" rel="stylesheet" />
     
 </head>
 
@@ -65,7 +69,7 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7 ct">
-                        <h1>Introduction</h1>
+                        <h1 id="introduction">Introduction</h1>
 
 <p>Recently I was pentesting an iOS application which of course had SSL pinning enables. For those who are not familiar what is SSL pinning, let&rsquo;s take description from <a href="https://thesslstore.com">https://thesslstore.com</a>:</p>
 
@@ -77,7 +81,7 @@
 
 <p>Some of the common methods to bypass SSL pinning are using <a href="https://github.com/sensepost/objection">objection</a> or using <a href="https://github.com/nabla-c0d3/ssl-kill-switch2">SSL Kill Switch 2</a>.</p>
 
-<h1>Bypassing</h1>
+<h1 id="bypassing">Bypassing</h1>
 
 <p>This was all done on my iPhone running iOS version 14.4 nonjailbroken so immediately SSL Kill Switch 2 is not an option because it is working only on jailbroken devices and we are left with objection.</p>
 
@@ -90,6 +94,9 @@
                     </div>
                 </div>
             </div>
+            
+    
+
         </article>
         
         
@@ -99,7 +106,7 @@
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <ul class="list-inline text-center">
                             <li class="list-inline-item">
-                                <a href="%5c#">
+                                <a href="">
                                     <span class="fa-stack fa-lg">
                                         <i class="fas fa-circle fa-stack-2x"></i>
                                         <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
@@ -148,5 +155,6 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         
         <script src="../js/scripts.js"></script>
+        <script src="../js/prism.js"></script>
     </body>
 </html>

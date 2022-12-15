@@ -12,6 +12,9 @@
         <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
     
     
+        
+    
+    
     <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
     
     <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
@@ -19,6 +22,7 @@
     
     
         <link href="../css/styles.css" rel="stylesheet" />
+        <link href="../css/prism.css" rel="stylesheet" />
     
 </head>
 
@@ -65,11 +69,11 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7 ct">
-                        <h2>Introduction</h2>
+                        <h2 id="introduction">Introduction</h2>
 
 <p>There are thousands of posts just like this one which describes how you should approach bypassing jailbreak detection. This one isn&rsquo;t different, just more step-by-step guide. We will be using <em>frida</em> and <em>class-dump</em> to bypass jailbreak detection. At the end of the post, there will be short snippet how to use theos instead of frida. You should have dumped .ipa file of the application and also you need to unzip .ipa file.</p>
 
-<h2>Information Gathering</h2>
+<h2 id="information-gathering">Information Gathering</h2>
 
 <p>After running the application, we are being presented with a sheet view that shows us a message that we can&rsquo;t use the application on jailbroken device. In order to bypass this, we first need to check whether there are some methods which are doing this check.</p>
 
@@ -203,7 +207,7 @@ Leaving function, retval is =&gt; 0x1
 
 </code></pre>
 
-<h2>Bypassing</h2>
+<h2 id="bypassing">Bypassing</h2>
 
 <p>So we can see that our method get&rsquo;s called and that is returning 0x1 as an indication that the device is jailbroken. If we overwrite the return value, we may be able to bypass the check. Our updated <em>script.js</em> file looks like this:</p>
 
@@ -243,7 +247,7 @@ Leaving function, retval is =&gt; 0x0
 
 <p><img src="../images/after_bypassing.png" alt="After bypassing" /></p>
 
-<h2>Theos instead of frida</h2>
+<h2 id="theos-instead-of-frida">Theos instead of frida</h2>
 
 <p>Fire up your <em>nic.pl</em>, select <em>iphone/tweak</em> and choose correct bundle for your application. In order to bypass this check using Theos, my Tweak.xmfile will look like this:</p>
 
@@ -261,6 +265,9 @@ Leaving function, retval is =&gt; 0x0
                     </div>
                 </div>
             </div>
+            
+    
+
         </article>
         
         
@@ -270,7 +277,7 @@ Leaving function, retval is =&gt; 0x0
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <ul class="list-inline text-center">
                             <li class="list-inline-item">
-                                <a href="%5c#">
+                                <a href="">
                                     <span class="fa-stack fa-lg">
                                         <i class="fas fa-circle fa-stack-2x"></i>
                                         <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
@@ -319,5 +326,6 @@ Leaving function, retval is =&gt; 0x0
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         
         <script src="../js/scripts.js"></script>
+        <script src="../js/prism.js"></script>
     </body>
 </html>

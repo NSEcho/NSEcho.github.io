@@ -12,6 +12,9 @@
         <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
     
     
+        
+    
+    
     <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
     
     <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
@@ -19,6 +22,7 @@
     
     
         <link href="../css/styles.css" rel="stylesheet" />
+        <link href="../css/prism.css" rel="stylesheet" />
     
 </head>
 
@@ -65,7 +69,7 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7 ct">
-                        <h2>Introduction</h2>
+                        <h2 id="introduction">Introduction</h2>
 
 <p>Recently, I have started fuzzing with AFL (American Fuzzy Lop) to try to find some vulnerabilities. For the target, I have chosen shell from prakhar1989 on the <a href="https://github.com/prakhar1989/shell">prakhar1989/shell repo</a>.</p>
 
@@ -76,7 +80,7 @@
 
 <p>Let&rsquo;s go through all of these three steps in this post and in another post I will write how to analyze crashes.</p>
 
-<h2>prakhar1989/shell</h2>
+<h2 id="prakhar1989-shell">prakhar1989/shell</h2>
 
 <p>This is basically small shell, written probably for learning purposes with limited functionality. Clone it from github repo, run <code>make</code> on it and start exploring <strong>w4118_sh</strong> binary a bit.</p>
 
@@ -88,7 +92,7 @@ $ /bin/ls
 Makefile	demo_run.txt	shell.h		README.md	shell.c		w4118_sh 
 </code></pre>
 
-<h2>Instrumenting the binary</h2>
+<h2 id="instrumenting-the-binary">Instrumenting the binary</h2>
 
 <p>Let&rsquo;s now instrument our binary to use AFL C compiler, called afl-clang-fast. Inside Makefile we need to substitute <code>gcc</code> with <code>${CC}</code> so we can pass our own CC variable to make process.</p>
 
@@ -124,7 +128,7 @@ SanitizerCoveragePCGUARD++3.01a
 1 warning generated.
 </code></pre>
 
-<h2>Prepare input</h2>
+<h2 id="prepare-input">Prepare input</h2>
 
 <p>AFL expects us to provide input directory which will contain our input string, or binary depending on our case. This does not apply in all fuzzing cases, but for this one, this will work. Sample input should be something simple that would generally work inside our target like <code>/bin/ls</code> which we saw that works inside our shell binary.</p>
 
@@ -134,7 +138,7 @@ SanitizerCoveragePCGUARD++3.01a
 $ echo '/bin/ls' &gt; in/a
 </code></pre>
 
-<h2>Fuzzing</h2>
+<h2 id="fuzzing">Fuzzing</h2>
 
 <p>When we are done with previous two steps, it is now time to fuzz and the process is incredibly simple.</p>
 
@@ -178,7 +182,7 @@ $ echo '/bin/ls' &gt; in/a
 
 <p>Generally, you should wait minmum of one cycle to end your fuzzing.</p>
 
-<h2>Confirming crash</h2>
+<h2 id="confirming-crash">Confirming crash</h2>
 
 <p>After running for one minute, we already saw that we have created 18 unique crashes. Let&rsquo;s take on of those crash strings and run it on our binary to see that we really crashed it.</p>
 
@@ -223,6 +227,9 @@ Segmentation fault (core dumped)
                     </div>
                 </div>
             </div>
+            
+    
+
         </article>
         
         
@@ -232,7 +239,7 @@ Segmentation fault (core dumped)
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <ul class="list-inline text-center">
                             <li class="list-inline-item">
-                                <a href="%5c#">
+                                <a href="">
                                     <span class="fa-stack fa-lg">
                                         <i class="fas fa-circle fa-stack-2x"></i>
                                         <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
@@ -281,5 +288,6 @@ Segmentation fault (core dumped)
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         
         <script src="../js/scripts.js"></script>
+        <script src="../js/prism.js"></script>
     </body>
 </html>

@@ -12,6 +12,9 @@
         <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
     
     
+        
+    
+    
     <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
     
     <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
@@ -19,6 +22,7 @@
     
     
         <link href="../css/styles.css" rel="stylesheet" />
+        <link href="../css/prism.css" rel="stylesheet" />
     
 </head>
 
@@ -65,7 +69,7 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7 ct">
-                        <h2>Introduction</h2>
+                        <h2 id="introduction">Introduction</h2>
 
 <p>I have always wanted to use <a href="https://github.com/radareorg/radare2">radare2</a> for reverse engineering. For those unfamiliar with radare2 it is basically like IDA or Ghidra but more cool. And for the debugging and analyzing applications, I have used all kinds of different tools but with r2 it feels like I have it all there needed.</p>
 
@@ -74,7 +78,7 @@
 
 <p>I will be doing the exact some analysis like in <a href="https://lateralusd.github.io/jailbreak_bypass/">Jailbreak Bypass</a> post but will do everything with r2 except for signing part.</p>
 
-<h2>Loading the binary</h2>
+<h2 id="loading-the-binary">Loading the binary</h2>
 
 <p>Extract your binary from the ipa file and pass it to the <code>r2</code> binary.</p>
 
@@ -83,13 +87,13 @@
 [0x100005490]&gt;
 </code></pre>
 
-<h2>Interface and method analysis</h2>
+<h2 id="interface-and-method-analysis">Interface and method analysis</h2>
 
 <p>We will approach this in two ways:
 * Getting straight to the class
 * Getting the class name from the method name</p>
 
-<h3>Getting straight to the class</h3>
+<h3 id="getting-straight-to-the-class">Getting straight to the class</h3>
 
 <p>Since we are now in the r2, the <code>i</code> command is the main information command, and if we type <code>i?</code> we will see further commands.</p>
 
@@ -123,7 +127,7 @@ class RootCheckResult
 
 <p>We can see that our <code>isRooted</code> method is indeed inside of RootCheckResult class.</p>
 
-<h3>Getting the class name from the method name</h3>
+<h3 id="getting-the-class-name-from-the-method-name">Getting the class name from the method name</h3>
 
 <p>In this approach we will do the same as we did in the original post, by trying to find the method responsible for root check. To shorten our time, let&rsquo;s say we now that the method <code>isRooted</code> is the one we are after. So let&rsquo;s see how to that exactly.</p>
 
@@ -152,7 +156,7 @@ class RootCheckResult
 
 <p>This method of searching is called cross referencing or XREFs.</p>
 
-<h2>Patching</h2>
+<h2 id="patching">Patching</h2>
 
 <p>Copy your binary and load the copied one into the r2 with write mode.</p>
 
@@ -235,6 +239,9 @@ Written 8 byte(s) (mov x0, 0,,ret) = wx 000080d2c0035fd6
                     </div>
                 </div>
             </div>
+            
+    
+
         </article>
         
         
@@ -244,7 +251,7 @@ Written 8 byte(s) (mov x0, 0,,ret) = wx 000080d2c0035fd6
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <ul class="list-inline text-center">
                             <li class="list-inline-item">
-                                <a href="%5c#">
+                                <a href="">
                                     <span class="fa-stack fa-lg">
                                         <i class="fas fa-circle fa-stack-2x"></i>
                                         <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
@@ -293,5 +300,6 @@ Written 8 byte(s) (mov x0, 0,,ret) = wx 000080d2c0035fd6
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         
         <script src="../js/scripts.js"></script>
+        <script src="../js/prism.js"></script>
     </body>
 </html>

@@ -12,6 +12,9 @@
         <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
     
     
+        
+    
+    
     <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
     
     <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
@@ -19,6 +22,7 @@
     
     
         <link href="../css/styles.css" rel="stylesheet" />
+        <link href="../css/prism.css" rel="stylesheet" />
     
 </head>
 
@@ -65,7 +69,7 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7 ct">
-                        <h2>Introduction</h2>
+                        <h2 id="introduction">Introduction</h2>
 
 <p><a href="https://github.com/Cisco-Talos/mutiny-fuzzer">mutiny</a> is a network fuzzer which uses radamsa to generate mutations. It is really simple to use, either with the captured pcap file or with the <a href="https://github.com/Cisco-Talos/Decept">decept</a> proxy.</p>
 
@@ -78,11 +82,11 @@
 * Start the mutiny fuzzer
 * Wait and hope</p>
 
-<h2>Vulnerable binary</h2>
+<h2 id="vulnerable-binary">Vulnerable binary</h2>
 
 <p>We are gonna use simple go program with provides us with the HTTP server. Program expects the user to provide it with the id in request, which will then be used to access the certain element from the array.</p>
 
-<h3>Basic communication</h3>
+<h3 id="basic-communication">Basic communication</h3>
 
 <pre><code class="language-bash">$ go run main.go
 2021/10/19 09:46:21 Connection from [::1]:61819
@@ -94,7 +98,7 @@
 element15
 </code></pre>
 
-<h3>Setup</h3>
+<h3 id="setup">Setup</h3>
 
 <p>I will use the tcpdump in order to generate the pcap file.</p>
 
@@ -105,7 +109,7 @@ element15
 
 <p>After we captured it, we can just stop the tcpdump and move to the next stage.</p>
 
-<h3>Preparing the fuzzing file</h3>
+<h3 id="preparing-the-fuzzing-file">Preparing the fuzzing file</h3>
 
 <p>Copy the <code>vuln.pcap</code> file inside the mutiny directory.</p>
 
@@ -126,7 +130,7 @@ All files have been written.
 
 <p>We can see that the file <code>vuln-0.fuzzer</code> has been created which will we modify in the next stage.</p>
 
-<h2>Modify .fuzzer file</h2>
+<h2 id="modify-fuzzer-file">Modify .fuzzer file</h2>
 
 <p>Once you open up the .fuzzer file in your text editor, at the top you will see some options, you can modify them later if you want. We will focus on the actual message in the fuzzer file.</p>
 
@@ -163,7 +167,7 @@ inbound 'HTTP/1.1 200 OK\r\nDate: Tue, 19 Oct 2021 07:51:00 GMT\r\nContent-Lengt
 
 <p>Our goal is to fuzz the actual number that gets sent to the server, but in order to do so we need to take a look at the actual commands inside the fuzzer file.</p>
 
-<h3>Fuzzer commands</h3>
+<h3 id="fuzzer-commands">Fuzzer commands</h3>
 
 <ul>
 <li>outbound - message is outbound, from the client to the server</li>
@@ -182,7 +186,7 @@ inbound 'HTTP/1.1 200 OK\r\nDate: Tue, 19 Oct 2021 07:51:00 GMT\r\nContent-Lengt
 
 <p>Modify the fuzzer file like I did above and it is now time to start the actual fuzzing.</p>
 
-<h2>Start the mutiny fuzzer</h2>
+<h2 id="start-the-mutiny-fuzzer">Start the mutiny fuzzer</h2>
 
 <p>Use the format: <code>python mutiny.py &lt;fuzzerFile&gt; &lt;serverAddr&gt;</code></p>
 
@@ -276,6 +280,9 @@ curl: (52) Empty reply from server
                     </div>
                 </div>
             </div>
+            
+    
+
         </article>
         
         
@@ -285,7 +292,7 @@ curl: (52) Empty reply from server
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <ul class="list-inline text-center">
                             <li class="list-inline-item">
-                                <a href="%5c#">
+                                <a href="">
                                     <span class="fa-stack fa-lg">
                                         <i class="fas fa-circle fa-stack-2x"></i>
                                         <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
@@ -334,5 +341,6 @@ curl: (52) Empty reply from server
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         
         <script src="../js/scripts.js"></script>
+        <script src="../js/prism.js"></script>
     </body>
 </html>

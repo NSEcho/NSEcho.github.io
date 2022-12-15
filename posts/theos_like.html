@@ -12,6 +12,9 @@
         <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
     
     
+        
+    
+    
     <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
     
     <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
@@ -19,6 +22,7 @@
     
     
         <link href="../css/styles.css" rel="stylesheet" />
+        <link href="../css/prism.css" rel="stylesheet" />
     
 </head>
 
@@ -65,7 +69,7 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7 ct">
-                        <h2>Introduction</h2>
+                        <h2 id="introduction">Introduction</h2>
 
 <p>A few days ago I was writing about injecting FridaGadget.dylib inside application on nonjailbroken device so I was thinking why not to do the same thing, just with custom code (code injection).</p>
 
@@ -78,7 +82,7 @@
 
 <p>Like in my previous <a href="https://lateralusd.github.io/frida_patching/">post</a>, the same prerequsities apply.</p>
 
-<h2>Details about application</h2>
+<h2 id="details-about-application">Details about application</h2>
 
 <p>Three important files are:
 * TestClass.h
@@ -125,7 +129,7 @@ Dec  9 22:36:20 WillGetHacked[4272] &lt;Notice&gt;: ECHO View loaded
 Dec  9 22:36:20 WillGetHacked[4272] &lt;Notice&gt;: ECHO I am from the app
 </code></pre>
 
-<h2>Details about dynamic library</h2>
+<h2 id="details-about-dynamic-library">Details about dynamic library</h2>
 
 <p>For our dynamic library, we have simple interface with one instance method in it. That is the method that will replace <em>whoami</em> method from interface <em>TestClass</em>.</p>
 
@@ -166,7 +170,7 @@ Dec  9 22:36:20 WillGetHacked[4272] &lt;Notice&gt;: ECHO I am from the app
 
 </code></pre>
 
-<h2>Explanation</h2>
+<h2 id="explanation">Explanation</h2>
 
 <p>We will use what is called method swizzling. It basically uses power of objective c runtime to modify application.</p>
 
@@ -198,7 +202,7 @@ Method originalMethod = class_getInstanceMethod(toReplaceClass, selOriginal);
 
 <p>This is the last step, we are setting implementation of -[TestClass whoami] to be the same as -[Haxor replace].</p>
 
-<h2>Creating ipa and installing it</h2>
+<h2 id="creating-ipa-and-installing-it">Creating ipa and installing it</h2>
 
 <p>The process is similar to the one we did last time.</p>
 
@@ -275,6 +279,9 @@ Dec  9 22:49:17 WillGetHacked(Haxor.dylib)[4302] &lt;Notice&gt;: ECHO I am from 
                     </div>
                 </div>
             </div>
+            
+    
+
         </article>
         
         
@@ -284,7 +291,7 @@ Dec  9 22:49:17 WillGetHacked(Haxor.dylib)[4302] &lt;Notice&gt;: ECHO I am from 
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <ul class="list-inline text-center">
                             <li class="list-inline-item">
-                                <a href="%5c#">
+                                <a href="">
                                     <span class="fa-stack fa-lg">
                                         <i class="fas fa-circle fa-stack-2x"></i>
                                         <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
@@ -333,5 +340,6 @@ Dec  9 22:49:17 WillGetHacked(Haxor.dylib)[4302] &lt;Notice&gt;: ECHO I am from 
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         
         <script src="../js/scripts.js"></script>
+        <script src="../js/prism.js"></script>
     </body>
 </html>

@@ -12,6 +12,9 @@
         <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
     
     
+        
+    
+    
     <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
     
     <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
@@ -19,6 +22,7 @@
     
     
         <link href="../css/styles.css" rel="stylesheet" />
+        <link href="../css/prism.css" rel="stylesheet" />
     
 </head>
 
@@ -67,7 +71,7 @@
                     <div class="col-md-10 col-lg-8 col-xl-7 ct">
                         <p>We have all been playing with cycript and changing those labels or perhaps we hid some views but we did not see the bigger picture of all of it, and the biggest question of them all is how it is related to <strong>class-dump</strong> and <strong>theos</strong>. To make things clear, im gonna take local news app.</p>
 
-<h2>Theos</h2>
+<h2 id="theos">Theos</h2>
 
 <p>Lets take definition from <a href="http://iphonedevwiki.net/index.php/Theos">iphonedevwiki</a> which says:</p>
 
@@ -77,7 +81,7 @@
 
 <p>What this means is that you can override certain app funcionality, extend it or remove it completely. Result of theos is called <em>tweak</em>. Let&rsquo;s say you have a functionality in app which shows advertisements, you could make a theos tweak (override method) not to show those advertisements.</p>
 
-<h2>Class-dump</h2>
+<h2 id="class-dump">Class-dump</h2>
 
 <p>Class-dump tool or alternative version class-dump-z which is faster is basically what its name says. It allows you to dump all classes as well as their methods inside the specific app binary. I like to install it on my Mac and run everything from there because it is easier for me. The first thing I do is dump application using tools like <strong>frida-ios-dump</strong> or <strong>Clutch</strong>, extract the <em>.ipa</em> file and run the class-dump against the binary.</p>
 
@@ -86,17 +90,20 @@
 
 <p>Run <code>class-dump --help</code> to see what each options means.</p>
 
-<h2>Cycript or cyrun, what the hell</h2>
+<h2 id="cycript-or-cyrun-what-the-hell">Cycript or cyrun, what the hell</h2>
 
 <p>The name of the original tool is called <strong>cycript</strong> which was made by saurik himself. On certain versions of jailbreak cycript does not work, and there is alternative called <em>cyrun</em>.</p>
 
 <p>Cycript enables you to attach to the application and inspect it in runtime. You can view all those views, labels, textfields etc. You can manipulate those elements however you want according to ObjC rules. Cycript is also useful to find which view controller is responsible for certain element, or which methods gets called on let&rsquo;s say button click.</p>
 
-<h2>Connecting everything</h2>
+<h2 id="connecting-everything">Connecting everything</h2>
 
                     </div>
                 </div>
             </div>
+            
+    
+
         </article>
         
         
@@ -106,7 +113,7 @@
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <ul class="list-inline text-center">
                             <li class="list-inline-item">
-                                <a href="%5c#">
+                                <a href="">
                                     <span class="fa-stack fa-lg">
                                         <i class="fas fa-circle fa-stack-2x"></i>
                                         <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
@@ -155,5 +162,6 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         
         <script src="../js/scripts.js"></script>
+        <script src="../js/prism.js"></script>
     </body>
 </html>
