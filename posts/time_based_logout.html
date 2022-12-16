@@ -170,7 +170,7 @@ Got called from
 
 <p>So, in order to bypass this, we just needs to set <code>logedIn</code> to 0x1(false) and we have successfully bypassed the check. Final script and the run are shown below:</p>
 
-<pre><code class="language-js">$ cat /tmp/bypass.js
+<pre><code>$ cat /tmp/bypass.js
 var idleTimerExceeded = ObjC.classes.AppDelegate[&quot;- idleTimerExceeded&quot;].implementation;
 
 Interceptor.attach(idleTimerExceeded, {
