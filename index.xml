@@ -4,7 +4,21 @@
     <link>https://lateralusd.github.io/</link>
     <description>custom blog</description>
     <managingEditor>xdaemonx@protonmail.com (lateralusd)</managingEditor>
-    <pubDate>Thu, 15 Dec 2022 23:35:26 +0100</pubDate>
+    <pubDate>Fri, 16 Dec 2022 08:07:23 +0000</pubDate>
+    <item>
+      <title>Test post</title>
+      <link>https://lateralusd.github.io/something_new.html</link>
+      <description>This is short description</description>
+      <author>lateralusd</author>
+      <pubDate>Fri, 16 Dec 2022 01:41:14 +0100</pubDate>
+    </item>
+    <item>
+      <title>Test post</title>
+      <link>https://lateralusd.github.io/empty_post.html</link>
+      <description>This is short description</description>
+      <author>lateralusd</author>
+      <pubDate>Fri, 16 Dec 2022 01:31:04 +0100</pubDate>
+    </item>
     <item>
       <title>Frida and time-based logout</title>
       <link>https://lateralusd.github.io/time_based_logout.html</link>
