@@ -4,14 +4,7 @@
     <link>https://lateralusd.github.io/</link>
     <description>custom blog</description>
     <managingEditor>xdaemonx@protonmail.com (lateralusd)</managingEditor>
-    <pubDate>Fri, 16 Dec 2022 08:16:03 +0000</pubDate>
-    <item>
-      <title>Frida &amp; golang</title>
-      <link>https://lateralusd.github.io/frida_golang.html</link>
-      <description>Reversing/parsing golang binaries with frida</description>
-      <author>lateralusd</author>
-      <pubDate>Wed, 30 Nov 2022 22:31:30 +0100</pubDate>
-    </item>
+    <pubDate>Sat, 18 Feb 2023 20:30:14 +0000</pubDate>
     <item>
       <title>Frida and time-based logout</title>
       <link>https://lateralusd.github.io/time_based_logout.html</link>
