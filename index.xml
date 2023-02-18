@@ -4,7 +4,14 @@
     <link>https://lateralusd.github.io/</link>
     <description>custom blog</description>
     <managingEditor>xdaemonx@protonmail.com (lateralusd)</managingEditor>
-    <pubDate>Sat, 18 Feb 2023 21:31:28 +0000</pubDate>
+    <pubDate>Sat, 18 Feb 2023 22:03:57 +0000</pubDate>
+    <item>
+      <title>LC_LOAD_[WEAK_]DYLIB and LC_CODE_SIGNATURE</title>
+      <link>https://lateralusd.github.io/codesig_dylib.html</link>
+      <description>Adding new loads and removing code signature</description>
+      <author>lateralusd</author>
+      <pubDate>Sat, 18 Feb 2023 21:32:40 +0100</pubDate>
+    </item>
     <item>
       <title>Frida and time-based logout</title>
       <link>https://lateralusd.github.io/time_based_logout.html</link>
