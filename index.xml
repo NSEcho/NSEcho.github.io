@@ -4,9 +4,9 @@
     <link>https://lateralusd.github.io/</link>
     <description>custom blog</description>
     <managingEditor>xdaemonx@protonmail.com (lateralusd)</managingEditor>
-    <pubDate>Sat, 18 Feb 2023 23:46:32 +0000</pubDate>
+    <pubDate>Tue, 21 Feb 2023 15:17:42 +0000</pubDate>
     <item>
-      <title>LC_LOAD_[WEAK_]DYLIB and LC_CODE_SIGNATURE</title>
+      <title>Code signature and new dylibs (Part 1)</title>
       <link>https://lateralusd.github.io/codesig_dylib.html</link>
       <description>Adding new loads and removing code signature</description>
       <author>lateralusd</author>
