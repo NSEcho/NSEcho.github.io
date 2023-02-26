@@ -4,108 +4,108 @@
     <link>https://lateralusd.github.io/</link>
     <description>custom blog</description>
     <managingEditor>xdaemonx@protonmail.com (lateralusd)</managingEditor>
-    <pubDate>Sun, 26 Feb 2023 13:18:52 +0000</pubDate>
+    <pubDate>Sun, 26 Feb 2023 13:19:21 +0000</pubDate>
     <item>
       <title>Code signature and new dylibs (Part 1)</title>
-      <link>https://lateralusd.github.io/codesig_dylib.html</link>
+      <link>https://lateralusd.github.io/posts/codesig_dylib.html</link>
       <description>Adding new loads and removing code signature</description>
       <author>lateralusd</author>
       <pubDate>Sat, 18 Feb 2023 21:32:40 +0100</pubDate>
     </item>
     <item>
       <title>Frida and time-based logout</title>
-      <link>https://lateralusd.github.io/time_based_logout.html</link>
+      <link>https://lateralusd.github.io/posts/time_based_logout.html</link>
       <description>Bypassing application logout with frida</description>
       <author>lateralusd</author>
       <pubDate>Wed, 12 Oct 2022 14:33:01 +0200</pubDate>
     </item>
     <item>
       <title>Buggy lldb fuzzer</title>
-      <link>https://lateralusd.github.io/lldb_fuzzing.html</link>
+      <link>https://lateralusd.github.io/posts/lldb_fuzzing.html</link>
       <description>How can we fuzz with lldb and python</description>
       <author>lateralusd</author>
       <pubDate>Thu, 21 Oct 2021 22:39:17 +0200</pubDate>
     </item>
     <item>
       <title>mutiny fuzzer</title>
-      <link>https://lateralusd.github.io/mutiny_fuzzing.html</link>
+      <link>https://lateralusd.github.io/posts/mutiny_fuzzing.html</link>
       <description>Fuzzing the network with mutiny fuzzer</description>
       <author>lateralusd</author>
       <pubDate>Tue, 19 Oct 2021 09:29:40 +0200</pubDate>
     </item>
     <item>
       <title>Cracking Mac OS applications for fun and no profit</title>
-      <link>https://lateralusd.github.io/cracking_macos.html</link>
+      <link>https://lateralusd.github.io/posts/cracking_macos.html</link>
       <description>Cracking or should I say patching of Mac OS applications</description>
       <author>lateralusd</author>
       <pubDate>Tue, 08 Jun 2021 14:58:20 +0200</pubDate>
     </item>
     <item>
       <title>Radare2 and iOS Apps</title>
-      <link>https://lateralusd.github.io/radare_objectivec.html</link>
+      <link>https://lateralusd.github.io/posts/radare_objectivec.html</link>
       <description>Analyzing the iOS applications using radare2</description>
       <author>lateralusd</author>
       <pubDate>Wed, 14 Apr 2021 20:46:23 +0200</pubDate>
     </item>
     <item>
       <title>SSL pinning is not that hard... sometimes</title>
-      <link>https://lateralusd.github.io/ssl_bypass_simple.html</link>
+      <link>https://lateralusd.github.io/posts/ssl_bypass_simple.html</link>
       <description>Bypassing SSL pinning</description>
       <author>lateralusd</author>
       <pubDate>Mon, 22 Feb 2021 17:22:16 +0100</pubDate>
     </item>
     <item>
       <title>American F Lop</title>
-      <link>https://lateralusd.github.io/afl_fuzzing.html</link>
+      <link>https://lateralusd.github.io/posts/afl_fuzzing.html</link>
       <description>Fuzzing can be fun</description>
       <author>lateralusd</author>
       <pubDate>Fri, 05 Feb 2021 19:04:36 +0100</pubDate>
     </item>
     <item>
       <title>Jailbreak bypass</title>
-      <link>https://lateralusd.github.io/jailbreak_bypass.html</link>
+      <link>https://lateralusd.github.io/posts/jailbreak_bypass.html</link>
       <description>Simple jailbreak detection bypass</description>
       <author>lateralusd</author>
       <pubDate>Mon, 25 Jan 2021 18:05:36 +0100</pubDate>
     </item>
     <item>
       <title>Code injection on nonjailbroken iPhone</title>
-      <link>https://lateralusd.github.io/theos_like.html</link>
+      <link>https://lateralusd.github.io/posts/theos_like.html</link>
       <description>Using custom dylib to modify applications on nonjailbroken iPhone</description>
       <author>lateralusd</author>
       <pubDate>Wed, 09 Dec 2020 19:31:28 +0100</pubDate>
     </item>
     <item>
       <title>FridaGadget.dylib on nonjailbroken iPhone</title>
-      <link>https://lateralusd.github.io/frida_patching.html</link>
+      <link>https://lateralusd.github.io/posts/frida_patching.html</link>
       <description>Finally got it</description>
       <author>lateralusd</author>
       <pubDate>Sat, 05 Dec 2020 22:31:11 +0100</pubDate>
     </item>
     <item>
       <title>Modlishka &amp; Lateralus</title>
-      <link>https://lateralusd.github.io/lateralus.html</link>
+      <link>https://lateralusd.github.io/posts/lateralus.html</link>
       <description>Strange words</description>
       <author>lateralusd</author>
       <pubDate>Thu, 08 Oct 2020 14:54:09 +0200</pubDate>
     </item>
     <item>
       <title>Fun RCE with PHP upload</title>
-      <link>https://lateralusd.github.io/rce.html</link>
+      <link>https://lateralusd.github.io/posts/rce.html</link>
       <description>500 Internal Error sometimes can be good</description>
       <author>lateralusd</author>
       <pubDate>Mon, 17 Aug 2020 13:09:06 +0200</pubDate>
     </item>
     <item>
       <title>Connecting the dots between Theos and Cycript/Cyrun</title>
-      <link>https://lateralusd.github.io/theos_cycript_cyrun.html</link>
+      <link>https://lateralusd.github.io/posts/theos_cycript_cyrun.html</link>
       <description>What is the releationship between the two</description>
       <author>lateralusd</author>
       <pubDate>Fri, 03 Jul 2020 17:28:54 +0200</pubDate>
     </item>
     <item>
       <title>Debugging iOS apps on jailbroken iPhone</title>
-      <link>https://lateralusd.github.io/debugging.html</link>
+      <link>https://lateralusd.github.io/posts/debugging.html</link>
       <description>LLDB + debugserver to debug iOS apps</description>
       <author>lateralusd</author>
       <pubDate>Fri, 03 Jul 2020 13:44:28 +0200</pubDate>
