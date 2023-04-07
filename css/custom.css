@@ -1,0 +1,11 @@
+body {
+    background-color: rgb(30,31,34) !important;
+}
+
+h1,h2,h3,ul,ol,pre,p,table {
+    color: white;
+}
+
+a {
+    color: rgb(114,150,184) !important;
+}
