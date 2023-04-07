@@ -2,10 +2,14 @@ body {
     background-color: rgb(30,31,34) !important;
 }
 
-h1,h2,h3,ul,ol,pre,p,table {
+h1,h2,h3,ul,ol,pre,table {
     color: white;
 }
 
+p {
+    color: rgb(114,150,184);
+}
+
 a {
-    color: rgb(114,150,184) !important;
+    color: rgb(233,124,68) !important;
 }
