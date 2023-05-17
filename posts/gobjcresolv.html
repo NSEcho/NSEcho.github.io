@@ -1,0 +1,480 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    
+        <title>GObjCResolv</title>
+        <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+    
+    
+        
+            <link href="../css/custom.css" rel="stylesheet"/>
+        
+    
+    
+    <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
+    
+    <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+    
+    
+        <link href="../css/styles.css" rel="stylesheet" />
+        <link href="../css/prism.css" rel="stylesheet" />
+    
+</head>
+
+    <body>
+        
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="../index.html">Home</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../about.html">About</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../pages/cves.html">CVEs</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../pages/exploits.html">Vulnerabilities</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../tags.html">Tags</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <header class="masthead" style="background-image: url('../assets/img/post-bg.jpg');">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>GObjCResolv</h1>
+                            <h2 class="subheading">Creating ObjC resolver in Golang</h2>
+                            
+                                <a href="../tags/reverse-engineering.html"><button type="button" class="btn btn-primary btn-sm">reverse-engineering</button></a>
+                            
+                                <a href="../tags/frida.html"><button type="button" class="btn btn-primary btn-sm">frida</button></a>
+                            
+                                <a href="../tags/golang.html"><button type="button" class="btn btn-primary btn-sm">golang</button></a>
+                            
+                            <br><br>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">NSEcho</a>
+                                on 2023-05-15 23:44:08
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7 ct">
+                        <h1 id="table-of-contents">Table of Contents</h1>
+
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#creating-resolver">Creating Resolver</a></li>
+<li><a href="#creating-tcp-server">Creating TCP server</a></li>
+<li><a href="#building-and-using">Building and using</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+
+<p><img src="../images/gobjcresolv_conn.png" alt="connection to gobjcresolv" /></p>
+
+<h1 id="introduction">Introduction</h1>
+
+<p>While I was reading and analyzing some of frida code, I explored the idea of objc resolver that is available inside of it.</p>
+
+<p>The idea of resolver is simple:</p>
+
+<ul>
+<li>load objc dynamic library</li>
+<li>enumerate classes</li>
+<li>for each class enumerate instance and class methods</li>
+<li>add something more on top of it (like matching based on wildcard)</li>
+</ul>
+
+<p>Our <code>gobjcresolver.dylib</code> will look something like:</p>
+
+<ul>
+<li>enumerate classes</li>
+<li>populate their instance and class methods</li>
+<li>open some port to allow connection</li>
+<li>add custom protocol interaction between server(<code>gobjcresolver.dylib</code>) and client(ourselves).</li>
+</ul>
+
+<p>This will be implemented using Go mixed with C code and built as dynamic library ready to be loaded inside the iOS applications.</p>
+
+<h2 id="creating-resolver">Creating Resolver</h2>
+
+<p>Interaction with ObjC is available to us using <code>objc/runtime.h</code> header file.
+Dynamic library that actually exposes ObjC runtime to us
+is <code>/usr/lib/libobjc.A.dylib</code>.</p>
+
+<p>During application/program runtime, we can load specific library using <code>dlopen</code> function inside of <code>dlfcn.h</code> header file. Once we have obtained the handle
+ we can then use <code>dlsym</code> function to get function pointers for the symbol.</p>
+
+<p>In <code>C</code> code this looks like this:</p>
+
+<pre><code class="language-C">/*
+    If we want to get a handle of lets say function:
+    void some_function(char * something) we can use the 
+    code that looks like the one below.
+*/
+// get handle of the library
+void * handle = dlopen(&quot;/library/path&quot;, FLAGS); 
+// get function pointer of the symbol
+void (*function)(*char) = dlsym(handle, &quot;some_function&quot;);
+// call function
+function(&quot;some argument&quot;);
+</code></pre>
+
+<p>Now, since we have the way to get function pointers, the functions that we need to get are:</p>
+
+<ul>
+<li><code>objc_getClassList</code> - to get a list of registered ObjC classes</li>
+<li><code>class_getName</code> - to get a name of the class</li>
+<li><code>class_copyMethodList</code> - to get a list of instance methods for specific class</li>
+<li><code>object_getClass</code> - to get a class methods for specific class</li>
+<li><code>method_getName</code> - to get a name of the method</li>
+<li><code>sel_getName</code> - to convert <code>SEL</code> to <code>char*</code></li>
+</ul>
+
+<p>This whole C code will look like this:</p>
+
+<pre><code class="language-C">#include &lt;dlfcn.h&gt;
+#include &lt;objc/runtime.h&gt;
+#include &lt;stdio.h&gt;
+
+static int (*getClassList)(void*,int) = NULL;
+static char* (*getClassName)(Class) = NULL;
+static Method* (*copyMethodList)(Class,int*) = NULL;
+static SEL (*getSelector)(Method) = NULL;
+static char* (*getSelName)(SEL) = NULL;
+static Class (*objectGetClass)(void*) = NULL;
+
+static void * open_handle(void)
+{
+	void * handle = dlopen(&quot;/usr/lib/libobjc.A.dylib&quot;,
+		RTLD_LAZY | RTLD_GLOBAL | RTLD_NOLOAD);
+	getClassList = dlsym(handle, &quot;objc_getClassList&quot;);
+	getClassName = dlsym(handle, &quot;class_getName&quot;);
+	copyMethodList = dlsym(handle, &quot;class_copyMethodList&quot;);
+	getSelector = dlsym(handle, &quot;method_getName&quot;);
+	getSelName = dlsym(handle, &quot;sel_getName&quot;);
+	objectGetClass = dlsym(handle, &quot;object_getClass&quot;);
+
+	return handle;
+}
+
+int do_getClassList(Class * ptr, int count)
+{
+	return getClassList(ptr, count);
+}
+
+char * do_getClassName(Class klass)
+{
+	return getClassName(klass);
+}
+
+Method * do_copyMethodList(Class klass, int * count)
+{
+	Method * methods = (Method*)malloc(sizeof(Method)*(*count));
+	methods = copyMethodList(klass, count);
+	return methods;
+}
+
+char * do_getSelName(Method method) {
+	return getSelName(getSelector(method));
+}
+
+Class do_objectGetClass(void * klass)
+{
+	return objectGetClass(klass);
+}
+
+static Class * alloc_classes(int count)
+{
+	Class * classes = (Class*)malloc(sizeof(Class)*count);
+	return classes;
+}
+</code></pre>
+
+<p>Due to the limitations of CGO, we cannot directly call function pointers and that is the reason we are having wrapper functions that
+actually call our C function pointers.</p>
+
+<p>Our C code is finished, now we will create Go structs that represents <code>Class</code>, <code>Method</code> and a <code>Resolver</code> which will be our entrypoint.</p>
+
+<pre><code class="language-go">type Method struct {
+	handle   C.Method
+	selector string
+}
+
+type Class struct {
+	name            string
+	handle          C.Class
+	instanceMethods []Method
+	classMethods    []Method
+}
+
+type Resolver struct {
+	classCount int
+	handle     unsafe.Pointer
+	classes    []Class
+}
+</code></pre>
+
+<p>We will create <code>newResolver()</code> function which will call <code>open_handle()</code> and return <code>*Resolver</code>.</p>
+
+<pre><code class="language-go">func newResolver() *Resolver {
+	res := &amp;Resolver{}
+	res.handle = C.open_handle()
+	return res
+}
+</code></pre>
+
+<p>The main Resolver method, <code>enumerateClasses()</code> will do the following:</p>
+
+<ul>
+<li>get count of all classes</li>
+<li>allocate <code>array</code> of <code>Class</code> with <code>count</code> elements</li>
+<li>populate this array using <code>do_getClassList(array, count)</code></li>
+<li>create Go slice that will hold previous array</li>
+<li>for each class in the slice
+
+<ul>
+<li>get name using <code>do_getClassName(class)</code></li>
+<li>get instance methods using <code>do_copyMethodList(class, &amp;count)</code> and get each name</li>
+<li>append these methods to the <code>instanceMethods</code> slice for each <code>Class</code></li>
+<li>get class methods using <code>do_copyMethodList(do_objectGetClass(class), &amp;count)</code> and get each name</li>
+<li>append these methods to the <code>classMethods</code> slice for each <code>Class</code></li>
+<li>append this <code>Class</code> to the <code>classes</code> slice inside the Resolver</li>
+</ul></li>
+</ul>
+
+<p>The full code for this method is:</p>
+
+<pre><code class="language-go">func (r *Resolver) enumerateClasses() {
+	r.classCount = int(C.do_getClassList(nil, 0))
+
+	classes := C.alloc_classes(C.int(r.classCount))
+	C.do_getClassList(classes, C.int(r.classCount))
+
+	var cls []C.Class
+
+	hdr := (*reflect.SliceHeader)(unsafe.Pointer(&amp;cls))
+	hdr.Cap = r.classCount
+	hdr.Len = r.classCount
+	hdr.Data = uintptr(unsafe.Pointer(classes))
+
+	for _, class := range cls {
+		name := C.GoString(C.do_getClassName(class))
+		klass := Class{
+			name:   name,
+			handle: class,
+		}
+		var count C.int
+		instanceMethods := C.do_copyMethodList(class, &amp;count)
+
+		var methods []C.Method
+
+		methodsHdr := (*reflect.SliceHeader)(unsafe.Pointer(&amp;methods))
+		methodsHdr.Cap = int(count)
+		methodsHdr.Len = int(count)
+		methodsHdr.Data = uintptr(unsafe.Pointer(instanceMethods))
+
+		for _, method := range methods {
+			klass.instanceMethods = append(klass.instanceMethods, Method{
+				handle:   method,
+				selector: C.GoString(C.do_getSelName(method)),
+			})
+		}
+
+		classMethods := C.do_copyMethodList(C.do_objectGetClass(unsafe.Pointer(class)), &amp;count)
+
+		var clsMethods []C.Method
+
+		cMethodsHdr := (*reflect.SliceHeader)(unsafe.Pointer(&amp;clsMethods))
+		cMethodsHdr.Cap = int(count)
+		cMethodsHdr.Len = int(count)
+		cMethodsHdr.Data = uintptr(unsafe.Pointer(classMethods))
+
+		for _, method := range clsMethods {
+			klass.classMethods = append(klass.classMethods, Method{
+				handle:   method,
+				selector: C.GoString(C.do_getSelName(method)),
+			})
+		}
+
+		r.classes = append(r.classes, klass)
+	}
+}
+</code></pre>
+
+<h1 id="creating-tcp-server">Creating TCP server</h1>
+
+<p>The next step is creating the code that will setup TCP listener, that waits for the connection and once the connection has been established,
+it allows the usage of Resolver.</p>
+
+<pre><code class="language-go">//export run
+func run() {
+	res := newResolver()
+	res.enumerateClasses()
+
+	listen, err := net.Listen(&quot;tcp&quot;, &quot;:6666&quot;)
+	if err != nil {
+		return
+	}
+
+	fmt.Println(&quot;gobjcresolver: Listening on port 6666&quot;)
+
+	go func() {
+		conn, err := listen.Accept()
+		if err != nil {
+			return
+		}
+		fmt.Printf(&quot;gobjcresolver: Connection from %s\n&quot;, conn.RemoteAddr().String())
+		go handle(conn, res)
+	}()
+}
+</code></pre>
+
+<p><code>//export run</code> means that we will expose this function to the C code, the reason we are doing this is because inside of our <code>constructor</code> we will call this method.</p>
+
+<p>To access the exported Go function, we use <code>extern</code> C keyword followed by the function definition.</p>
+
+<pre><code class="language-C">
+extern void run(void);
+
+__attribute__((constructor))
+static void ctor(void)
+{
+	run();
+}
+</code></pre>
+
+<p>The rest of the code are just some methods that enumerate classes and methods, full code can be viewed at <a href="https://github.com/nsecho/gobjcresolver">gobjcresolver</a>.</p>
+
+<h1 id="building-and-using">Building and using</h1>
+
+<pre><code class="language-Makefile">CGO_ENABLED = 1
+GOOS = ios
+GOARCH = arm64
+OUTPUT = gobjcresolv.dylib
+CC = $(shell xcrun --sdk iphoneos --find clang) \
+-arch arm64 \
+-isysroot $(shell xcrun --sdk iphoneos --show-sdk-path)
+all:
+	@CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) \
+		GOARCH=$(GOARCH) CC=&quot;$(CC)&quot; \
+		go build -buildmode=c-archive -o gobjcresolv.a .
+	@xcrun --sdk iphoneos clang -arch arm64 \
+		-shared -all_load -o $(OUTPUT) gobjcresolv.a \
+		-framework CoreFoundation
+	@rm gobjcresolv.h gobjcresolv.a
+	@echo &quot;[*] Created dylib $(OUTPUT)&quot; 
+</code></pre>
+
+<p>Once <code>gobjcresolv.dylib</code> is created, we can add it to the application using the method described in
+<a href="frida_patching.html">FridaGadget.dylib on nonjailbroken iPhone</a>.</p>
+
+<p><img src="../images/gobjcresolv_listening.png" alt="gobjcresolv listening" /></p>
+
+<p><img src="../images/gobjcresolv_conn.png" alt="connection to gobjcresolv" /></p>
+
+<p><img src="../images/gobjcresolv_class.png" alt="getting class/instance methods" /></p>
+
+                    </div>
+                </div>
+            </div>
+            
+    
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <h1 id="references">References</h1>
+                <ol>
+                    <li><a href="https://developer.apple.com/documentation/objectivec/objective-c_runtime?language=objc">https://developer.apple.com/documentation/objectivec/objective-c_runtime?language=objc</a></li>
+                    <li><a href="https://github.com/frida/frida-gum/blob/main/gum/backend-darwin/gumobjcapiresolver.c">https://github.com/frida/frida-gum/blob/main/gum/backend-darwin/gumobjcapiresolver.c</a></li>
+                    <li><a href="https://github.com/nsecho/gobjcresolv">https://github.com/nsecho/gobjcresolv</a></li>
+                    
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+
+            
+        
+        
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <li class="list-inline-item">
+                                <a href="">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://www.github.com/lateralusd">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="mailto:xdaemonx@protonmail.com">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fas fa-envelope fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://nsecho.github.io//index.xml">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; NSEcho 2023</div>
+                        <div class="small text-center text-muted fst-italic">Made with <a href="https://github.com/lateralusd/bloggy">bloggy</a></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <style>
+            .ct > p img {
+                height: 100%;
+                width: 100%;
+            }
+        </style>
+
+        
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <script src="../js/scripts.js"></script>
+        <script src="../js/prism.js"></script>
+    </body>
+</html>
