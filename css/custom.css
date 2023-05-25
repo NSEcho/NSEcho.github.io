@@ -13,3 +13,13 @@ p {
 a {
     color: rgb(233,124,68) !important;
 }
+
+.pagination > li.disabled > a {
+    background-color: rgb(30,31,34) !important;
+    color: white !important;
+}
+
+.pagination > li > a {
+    background-color: rgb(30,31,34);
+}
+
