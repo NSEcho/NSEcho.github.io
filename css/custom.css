@@ -1,17 +1,22 @@
 body {
-    background-color: rgb(30,31,34) !important;
+    background-color: rgb(25, 54, 65) !important;
 }
 
-h1,h2,h3,ul,ol,pre,table {
-    color: white;
-}
-
-p {
-    color: rgb(114,150,184);
+code {
+    background-color: rgb(14,32,39);
+    padding: 3px;
 }
 
 a {
-    color: rgb(233,124,68) !important;
+    color: rgb(105,195,180) !important;
+}
+
+h1,h2,h3,ul,ol,pre,table {
+    color: rgb(173,180,180);
+}
+
+p {
+    color: rgb(124,137,139);
 }
 
 .pagination > li.disabled > a {
