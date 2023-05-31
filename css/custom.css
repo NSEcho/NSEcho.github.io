@@ -28,3 +28,6 @@ p {
     background-color: rgb(30,31,34);
 }
 
+code[class*="language-"] {
+    font-size: 0.9rem !important;
+}
