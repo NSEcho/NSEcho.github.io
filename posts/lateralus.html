@@ -76,7 +76,33 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7 ct">
-                        
+                        <h2 id="introduction">Introduction</h2>
+
+<p>Let&rsquo;s first start by giving description of Modlishka and lateralus.</p>
+
+<h3 id="modlishka">Modlishka</h3>
+
+<p><a href="https://github.com/drk1wi/Modlishka">Modlishka</a> is basically a reverse proxy which can be used to bypass 2FA, collect credentials and generally is helpful for phishing campaigns.<br>
+It has a lot of options, such as:<br>
+* Injecting custom javascript code (can be useful to rewrite parts of page)
+* Substitutions of strings
+* Credentials collection
+* Domain mode hijacking</p>
+
+<p>Here I will show only some parts of it, you should download it and give it a try.</p>
+
+<h3 id="lateralus">Lateralus</h3>
+
+<p><a href="https://github.com/lateralusd/lateralus">Lateralus</a> is a tool I have built specifically for phishing campaigns. It allows you to create email template, select targets, generate urls and correlate data with control db file of Modlishka. It is written in the same language as Modlishka, Golang, and as such it is easy to understand how it works.</p>
+
+<h2 id="goal">Goal</h2>
+
+<p>The goal is to collect credentials from out target, as a target site we will choose example.com.</p>
+
+<h2 id="setup">Setup</h2>
+
+<p>Our domain will be at lateralus.uk</p>
+
                     </div>
                 </div>
             </div>
@@ -92,7 +118,7 @@
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <ul class="list-inline text-center">
                             <li class="list-inline-item">
-                                <a href="https://twitter.com/@lateralusd_">
+                                <a href="@lateralusd_">
                                     <span class="fa-stack fa-lg">
                                         <i class="fas fa-circle fa-stack-2x"></i>
                                         <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>

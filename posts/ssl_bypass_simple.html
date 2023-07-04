@@ -82,7 +82,28 @@
             <div class="container px-4 px-lg-5">
                 <div class="row gx-4 gx-lg-5 justify-content-center">
                     <div class="col-md-10 col-lg-8 col-xl-7 ct">
-                        
+                        <h1 id="introduction">Introduction</h1>
+
+<p>Recently I was pentesting an iOS application which of course had SSL pinning enables. For those who are not familiar what is SSL pinning, let&rsquo;s take description from <a href="https://thesslstore.com">https://thesslstore.com</a>:</p>
+
+<blockquote>
+<p>Pinning is an optional mechanism that can be used to improve the security of a service or site that relies on SSL Certificates. Pinning allows you to specify a cryptographic identity that should be accepted by users visiting your site.</p>
+</blockquote>
+
+<p>Basically, SSL pinning is checking to see whether the application is communicating with the right server. SSL pinning is an obstacle that has to be removed if you want to intercept the request which application is making.</p>
+
+<p>Some of the common methods to bypass SSL pinning are using <a href="https://github.com/sensepost/objection">objection</a> or using <a href="https://github.com/nabla-c0d3/ssl-kill-switch2">SSL Kill Switch 2</a>.</p>
+
+<h1 id="bypassing">Bypassing</h1>
+
+<p>This was all done on my iPhone running iOS version 14.4 nonjailbroken so immediately SSL Kill Switch 2 is not an option because it is working only on jailbroken devices and we are left with objection.</p>
+
+<p>After patching the application with FridaGadget inside(you can read how to do it <a href="/frida_patching/">here</a>) we can use objection.</p>
+
+<pre><code>$ objection -g Gadget explore
+
+</code></pre>
+
                     </div>
                 </div>
             </div>
@@ -98,7 +119,7 @@
                     <div class="col-md-10 col-lg-8 col-xl-7">
                         <ul class="list-inline text-center">
                             <li class="list-inline-item">
-                                <a href="https://twitter.com/@lateralusd_">
+                                <a href="@lateralusd_">
                                     <span class="fa-stack fa-lg">
                                         <i class="fas fa-circle fa-stack-2x"></i>
                                         <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>

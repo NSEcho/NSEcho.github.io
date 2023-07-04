@@ -4,7 +4,7 @@
     <link>https://nsecho.github.io/</link>
     <description>custom blog</description>
     <managingEditor>xdaemonx@protonmail.com (NSEcho)</managingEditor>
-    <pubDate>Tue, 04 Jul 2023 09:47:45 +0000</pubDate>
+    <pubDate>Tue, 04 Jul 2023 09:52:13 +0000</pubDate>
     <item>
       <title>CVE-2023-33298 - Perimeter81 Local Privilege Escalation</title>
       <link>https://nsecho.github.io/posts/cve_2023_33298.html</link>
@@ -130,6 +130,18 @@
       <description>LLDB + debugserver to debug iOS apps</description>
       <author>NSEcho</author>
       <pubDate>Fri, 03 Jul 2020 13:44:28 +0200</pubDate>
+    </item>
+    <item>
+      <title></title>
+      <link>https://nsecho.github.io/posts/</link>
+      <description></description>
+      <author>NSEcho</author>
+    </item>
+    <item>
+      <title></title>
+      <link>https://nsecho.github.io/posts/</link>
+      <description></description>
+      <author>NSEcho</author>
     </item>
   </channel>
 </rss>
