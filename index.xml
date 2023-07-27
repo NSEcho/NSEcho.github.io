@@ -4,7 +4,14 @@
     <link>https://nsecho.github.io/</link>
     <description>custom blog</description>
     <managingEditor>xdaemonx@protonmail.com (NSEcho)</managingEditor>
-    <pubDate>Thu, 20 Jul 2023 21:32:21 +0000</pubDate>
+    <pubDate>Thu, 27 Jul 2023 15:07:06 +0000</pubDate>
+    <item>
+      <title>NoMachine Arbitrary File Overwrite</title>
+      <link>https://nsecho.github.io/posts/nomachine_afo.html</link>
+      <description>Using hardlinks to overwrite root owned files</description>
+      <author>NSEcho</author>
+      <pubDate>Fri, 21 Jul 2023 19:09:42 +0200</pubDate>
+    </item>
     <item>
       <title>CVE-2023-33298 - Perimeter81 Local Privilege Escalation</title>
       <link>https://nsecho.github.io/posts/cve_2023_33298.html</link>
