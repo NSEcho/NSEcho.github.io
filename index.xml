@@ -4,7 +4,21 @@
     <link>https://nsecho.github.io/</link>
     <description>custom blog</description>
     <managingEditor>xdaemonx@protonmail.com (NSEcho)</managingEditor>
-    <pubDate>Fri, 28 Jul 2023 10:39:31 +0000</pubDate>
+    <pubDate>Wed, 02 Aug 2023 17:44:33 +0000</pubDate>
+    <item>
+      <title>Tunnelblick Local Privilege Escalation</title>
+      <link>https://nsecho.github.io/posts/tunnelblick_assisted_lpe.html</link>
+      <description>Abusing .ovpn files to gain privilege escalation</description>
+      <author>NSEcho</author>
+      <pubDate>Tue, 01 Aug 2023 17:23:07 +0200</pubDate>
+    </item>
+    <item>
+      <title>Tunnelblick Arbitrary File Overwrite</title>
+      <link>https://nsecho.github.io/posts/tunnelblick_file_overwrite.html</link>
+      <description>Using hardlinks to overwrite root owned files</description>
+      <author>NSEcho</author>
+      <pubDate>Sun, 30 Jul 2023 10:12:06 +0200</pubDate>
+    </item>
     <item>
       <title>NoMachine Arbitrary File Overwrite</title>
       <link>https://nsecho.github.io/posts/nomachine_afo.html</link>
