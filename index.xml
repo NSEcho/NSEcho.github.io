@@ -4,7 +4,7 @@
     <link>https://nsecho.github.io/</link>
     <description>custom blog</description>
     <managingEditor>xdaemonx@protonmail.com (NSEcho)</managingEditor>
-    <pubDate>Thu, 03 Aug 2023 07:42:04 +0000</pubDate>
+    <pubDate>Thu, 03 Aug 2023 14:32:46 +0000</pubDate>
     <item>
       <title>Tunnelblick Local Privilege Escalation</title>
       <link>https://nsecho.github.io/posts/tunnelblick_assisted_lpe.html</link>
@@ -20,7 +20,7 @@
       <pubDate>Sun, 30 Jul 2023 10:12:06 +0200</pubDate>
     </item>
     <item>
-      <title>NoMachine Arbitrary File Overwrite</title>
+      <title>CVE-2023-39107 - NoMachine Arbitrary File Overwrite</title>
       <link>https://nsecho.github.io/posts/nomachine_afo.html</link>
       <description>Using hardlinks to overwrite root owned files</description>
       <author>NSEcho</author>
