@@ -4,7 +4,14 @@
     <link>https://nsecho.github.io/</link>
     <description>custom blog</description>
     <managingEditor>xdaemonx@protonmail.com (NSEcho)</managingEditor>
-    <pubDate>Tue, 26 Sep 2023 17:29:57 +0000</pubDate>
+    <pubDate>Mon, 02 Oct 2023 17:20:59 +0000</pubDate>
+    <item>
+      <title>CVE-2023-43976 - CatoNetworks macOS LPE</title>
+      <link>https://nsecho.github.io/posts/cve_2023_43976.html</link>
+      <description>Exploiting notorization race conditions</description>
+      <author>NSEcho</author>
+      <pubDate>Mon, 02 Oct 2023 09:07:48 +0200</pubDate>
+    </item>
     <item>
       <title>Fuzz iOS URL schemes with furlzz</title>
       <link>https://nsecho.github.io/posts/furlzz_fuzzing_bear.html</link>
