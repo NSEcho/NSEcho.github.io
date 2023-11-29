@@ -1,0 +1,192 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    
+        <title>Certified iOS Security Engineer</title>
+        <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+    
+    
+        
+            <link href="../css/custom.css" rel="stylesheet"/>
+        
+    
+    
+    <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" crossorigin="anonymous"></script>
+    
+    <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css" />
+    
+    
+        <link href="../css/styles.css" rel="stylesheet" />
+        <link href="../css/prism.css" rel="stylesheet" />
+    
+</head>
+
+    <body>
+        
+        <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <a class="navbar-brand" href="../index.html">Home</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                    Menu
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../about.html">About</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../pages/cves.html">CVEs</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../pages/exploits.html">Vulnerabilities</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../pages/resources.html">Resources</a></li>
+                        
+                        <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="../tags.html">Tags</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        
+        <header class="masthead" style="background-image: url('../assets/img/post-bg.jpg');">
+            <div class="container position-relative px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <div class="post-heading">
+                            <h1>Certified iOS Security Engineer</h1>
+                            <h2 class="subheading">Review of the Certified iOS Security Engineer certification</h2>
+                            
+                                <a href="../tags/ios.html"><button type="button" class="btn btn-primary btn-sm">ios</button></a>
+                            
+                                <a href="../tags/cert.html"><button type="button" class="btn btn-primary btn-sm">cert</button></a>
+                            
+                            <br><br>
+                            <span class="meta">
+                                Posted by
+                                <a href="#!">NSEcho</a>
+                                on 2023-11-29 19:30:20
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <article class="mb-4">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7 ct">
+                        <h1 id="certified-ios-security-engineer-review">Certified iOS Security Engineer Review</h1>
+
+<h2 id="background-and-preparation">Background and preparation</h2>
+
+<p>A couple of days ago I have obtained <a href="https://8ksec.io/cise/">CISE</a> (Certified iOS Security Engineer) from <a href="https://8ksec.io">8ksec</a>. As I am a penetration tester and the person who is interested in iOS and macOS security, this was really nice exam to test my knowledge about it. I did not take any specific preparation besides the work I do daily which is pen testing iOS applications and learning about its internals.</p>
+
+<p>The exam will prove that you have the knowledge about the iOS applications, filesystem and different attack vectors. You will have to utilise the static and dynamic analysis using tools such as IDA Pro, Hopper, radare2, Frida, etc. There are no any specific prerequisites for the exam, but you will be in much better position if you spend some time penetration testing or generally doing any kind of iOS based research. This certificate is an intermediate level so you can approximately know what to expect.</p>
+
+<h2 id="the-exam">The exam</h2>
+
+<p>For the exam, you get 24 hours to finish it. It consists of multiple iOS applications that you have to attack, but this may not always be the case because from the description of the exam you can also get some services to attack, such as XPC services.</p>
+
+<p>For the exam, you get applications/services installed on the Corellium labs and the access to it and the exam objectives are provided to you at the time of the exam start. This was the first time that I have used Corellium labs so it was pretty nice to get my hands on it.</p>
+
+<p>After you are logged in, you will start with the usual reconnaissance that starts from the static analysis, such as utilizing Hopper, examining the app structure in the case if you are dealing with application instead of service, dumping the strings, etc.</p>
+
+<p>Sometimes there may not be anything interesting during the static analysis, so you will have to start with dynamic analysis. For the dynamic analysis, the Frida is the tool you will use mostly. I had to bypass anti-debug and anti-Frida in order to do dynamic analysis properly. After you have bypassed these methods, you will need to find other vulnerabilities and the goal is to find them as much as you can.</p>
+
+<p>After you are done with the exam, you write the report with all your findings and a couple of days later you will be notified about the results.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Overall, the exam was pretty nice and anyone with some level of experience with iOS should be able to pass the exam. I would suggest this exam to anyone interested in iOS as this will be some kind of confirmation for you knowledge.</p>
+
+<h2 id="resources">Resources</h2>
+
+<p>Here are a couple of resources where you can learn more about the things that will be required in the exam.
+* <a href="https://frida.re/docs/javascript-api/">https://frida.re/docs/javascript-api/</a>
+* <a href="https://8ksec.io/advanced-frida-usage-part-1-ios-encryption-libraries-8ksec-blogs/">https://8ksec.io/advanced-frida-usage-part-1-ios-encryption-libraries-8ksec-blogs/</a>
+* <a href="https://8ksec.io/advanced-frida-usage-part-2-analyzing-signal-and-telegram-messages-on-ios/">https://8ksec.io/advanced-frida-usage-part-2-analyzing-signal-and-telegram-messages-on-ios/</a>
+* <a href="https://8ksec.io/advanced-frida-usage-part-3-inspecting-ios-xpc-calls/">https://8ksec.io/advanced-frida-usage-part-3-inspecting-ios-xpc-calls/</a>
+* <a href="https://8ksec.io/advanced-frida-usage-part-4-sniffing-location-data-from-locationd-in-ios/">https://8ksec.io/advanced-frida-usage-part-4-sniffing-location-data-from-locationd-in-ios/</a>
+* <a href="https://8ksec.io/arm64-reversing-and-exploitation-part-1-arm-instruction-set-simple-heap-overflow/">https://8ksec.io/arm64-reversing-and-exploitation-part-1-arm-instruction-set-simple-heap-overflow/</a>
+* <a href="https://8ksec.io/ios-deeplink-attacks-part-1-introduction-8ksec-blogs/">https://8ksec.io/ios-deeplink-attacks-part-1-introduction-8ksec-blogs/</a>
+* <a href="https://8ksec.io/ios-deep-link-attacks-part-2-exploitation-8ksec-blogs/">https://8ksec.io/ios-deep-link-attacks-part-2-exploitation-8ksec-blogs/</a>
+* <a href="https://codeshare.frida.re/">https://codeshare.frida.re/</a>
+* <a href="https://dhiyaneshgeek.github.io/mobile/security/2021/12/25/hopper-disassembler/">https://dhiyaneshgeek.github.io/mobile/security/2021/12/25/hopper-disassembler/</a>
+* <a href="https://payatu.com/blog/runtime-manipulation-with-lldb/">https://payatu.com/blog/runtime-manipulation-with-lldb/</a>
+* <a href="https://philkeeble.com/ios/reverse-engineering/iOS-Anti-Anti-Hooking/">https://philkeeble.com/ios/reverse-engineering/iOS-Anti-Anti-Hooking/</a>
+* And of course my own blog that contains a couple of useful iOS related blog posts</p>
+
+                    </div>
+                </div>
+            </div>
+            
+    
+
+            
+        
+        
+        <footer class="border-top">
+            <div class="container px-4 px-lg-5">
+                <div class="row gx-4 gx-lg-5 justify-content-center">
+                    <div class="col-md-10 col-lg-8 col-xl-7">
+                        <ul class="list-inline text-center">
+                            <li class="list-inline-item">
+                                <a href="https://twitter.com/@lateralusd_">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://www.github.com/nsecho">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="mailto:xdaemonx@protonmail.com">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fas fa-envelope fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://nsecho.github.io//index.xml">
+                                    <span class="fa-stack fa-lg">
+                                        <i class="fas fa-circle fa-stack-2x"></i>
+                                        <i class="fas fa-rss fa-stack-1x fa-inverse"></i>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                        <div class="small text-center text-muted fst-italic">Copyright &copy; NSEcho 2023</div>
+                        <div class="small text-center text-muted fst-italic">Made with <a href="https://github.com/lateralusd/bloggy">bloggy</a></div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <style>
+            .ct > p img {
+                height: 100%;
+                width: 100%;
+            }
+        </style>
+
+        
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+        
+        <script src="../js/scripts.js"></script>
+        <script src="../js/prism.js"></script>
+    </body>
+</html>
