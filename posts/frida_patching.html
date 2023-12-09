@@ -119,7 +119,7 @@
 
 <p>First download the gadget from the site given in the prerequisites section. After you have done that, copy .ipa file, embedded.mobileprovision and frida gadget to the same directory, like in an example below.</p>
 
-<pre><code>$ tree /tmp/patchingIPA/
+<pre><code class="language-bash">$ tree /tmp/patchingIPA/
 .
 ├── FridaGadget.dylib
 ├── embedded.mobileprovision
@@ -153,13 +153,13 @@ $ cp FridaGadget.dylib Payload/testApp.app/
 
 <p>Now we need to tell our binary to load this FridaGadget.dylib, we do that using <code>insert_dylib</code>.</p>
 
-<pre><code>$ insert_dylib --strip-codesig --inplace @executable_path/FridaGadget.dylib Payload/testApp.app/testApp
+<pre><code class="language-bash">$ insert_dylib --strip-codesig --inplace @executable_path/FridaGadget.dylib Payload/testApp.app/testApp
 Added LC_LOAD_DYLIB to Payload/testApp.app/testApp
 </code></pre>
 
 <p>There is one more thing left before packaging our app and deploying it, and that is telling our binary where to search for dylibs. In rescue comes <code>install_name_tool</code>.</p>
 
-<pre><code>$ install_name_tool -add_rpath @executable_path/. Payload/testApp.app/testApp
+<pre><code class="language-bash">$ install_name_tool -add_rpath @executable_path/. Payload/testApp.app/testApp
 </code></pre>
 
 <h2 id="signing-application">Signing application</h2>
@@ -170,7 +170,7 @@ Added LC_LOAD_DYLIB to Payload/testApp.app/testApp
 
 <p>Now we run applesign on it using our embedded.mobileprovision file and passing the bundle identifier which we setup during creation of our test app. In my case it was com.delorean.test.</p>
 
-<pre><code>$ applesign --mobileprovision ./embedded.mobileprovision --bundleid com.delorean.test patched.ipa
+<pre><code class="language-bash">$ applesign --mobileprovision ./embedded.mobileprovision --bundleid com.delorean.test patched.ipa
 File: /private/tmp/testApp/test/patchingIPA/patched.ipa
 [ ... REDACTED ... ]
 Target is now signed: patched-resigned.ipa
@@ -179,7 +179,7 @@ Cleaning up /private/tmp/testApp/test/patchingIPA/patched.ipa.afdd2d36-e576-42b4
 
 <p>As applesign says, our signed app is now inside <em>patched-resigned.ipa</em>. We are gonna create a new directory, copy our new resigned app in it, unzip it and deploy it to our device.</p>
 
-<pre><code>$ mkdir test
+<pre><code class="language-bash">$ mkdir test
 $ cp patched-resigned.ipa test &amp;&amp; cd test
 $ unzip patched-resigned.ipa
 Archive:  patched-resigned.ipa
@@ -211,7 +211,7 @@ Install: Complete
 
 <p>After you have done that, run ios-deploy.</p>
 
-<pre><code>$ ios-deploy --bundle Payload/testApp.app/ -W -d
+<pre><code class="language-bash">$ ios-deploy --bundle Payload/testApp.app/ -W -d
 [ ... REDACTED ...]
 (lldb)     connect
 (lldb)     run
@@ -221,7 +221,7 @@ success
 
 <p>In other window, run <code>$ frida-ps -U | grep -i gadget</code>. If everything is done correctly, you should see it in the listing and you can connect to it and hack the hell out of it.</p>
 
-<pre><code>$ frida-ps -U | grep -i gadget
+<pre><code class="language-bash">$ frida-ps -U | grep -i gadget
 668  Gadget
 $ frida -U Gadget
      ____
