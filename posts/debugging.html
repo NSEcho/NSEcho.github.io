@@ -82,15 +82,21 @@
                     <div class="col-md-10 col-lg-8 col-xl-7 ct">
                         <p>The first time I have tried to debug iOS apps on my jailbroken iPhone I hit the wall. There were many issues I had to solve so in this short post I&rsquo;m gonna try to help you with this. Since you came to this post, I believe you already know what is lldb so I won&rsquo;t talk about it and let&rsquo;s get straight to the point.</p>
 
-<p><strong>Prerequisites:</strong>
-1. Jailbroken iPhone (mine is iPhone 11, 13.4.1)
-2. OpenSSH installed and running on iPhone since we will be using <code>scp</code> to copy files to and from device.</p>
+<p><strong>Prerequisites:</strong></p>
+
+<ol>
+<li>Jailbroken iPhone (mine is iPhone 11, 13.4.1)</li>
+<li>OpenSSH installed and running on iPhone since we will be using <code>scp</code> to copy files to and from device.</li>
+</ol>
 
 <h2 id="getting-debugserver-on-device">Getting debugserver on device</h2>
 
-<p>The first thing you need to do is get <code>debugserver</code> on the device. There are generally two ways you can do this:
-* Using hdiutil to attach certain image for your iOS
-* Creating simple blank iOS app in Xcode and deploying it to your device.</p>
+<p>The first thing you need to do is get <code>debugserver</code> on the device. There are generally two ways you can do this:</p>
+
+<ul>
+<li>Using hdiutil to attach certain image for your iOS</li>
+<li>Creating simple blank iOS app in Xcode and deploying it to your device.</li>
+</ul>
 
 <p>You can check whether you successfully did any of these methods by checking if there is file <code>/Developer/usr/bin/debugserver</code>. If you see it, procede to the next section. Otherwise, repeat steps to get your debugserver on device.</p>
 
@@ -102,7 +108,7 @@
 
 <p>For signing debugserver I am using <code>ldid</code> which came installed with Theos. Create file <strong>ent.xml</strong> with following content:</p>
 
-<pre><code>&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
+<pre><code class="language-xml">&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;
 &lt;plist version=&quot;1.0&quot;&gt;
 &lt;dict&gt;
         &lt;key&gt;com.apple.springboard.debugapplications&lt;/key&gt;
@@ -119,24 +125,6 @@
 
 <p>Copy debugserver and ent.xml in the same folder and substitute <code>/opt/theos</code> for your install location of Theos.
 After creating file, issue <code>$ /opt/theos/bin/ldid -Sent.xml debugserver</code>.</p>
-
-<p>Create file ent.plist with content:</p>
-
-<pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/ PropertyList-1.0.dtd&quot;&gt;
-&lt;plist version=&quot;1.0&quot;&gt;
-&lt;dict&gt;
-	&lt;key&gt;com.apple.springboard.debugapplications&lt;/key&gt;
-	&lt;true/&gt;
-	&lt;key&gt;run-unsigned-code&lt;/key&gt;
-	&lt;true/&gt;
-	&lt;key&gt;get-task-allow&lt;/key&gt;
-	&lt;true/&gt;
-	&lt;key&gt;task_for_pid-allow&lt;/key&gt;
-	&lt;true/&gt;
-&lt;/dict&gt;
-&lt;/plist&gt;
-</code></pre>
 
 <p>Then run <code>$ codesign -s - --entitlements ent.plist -f debugserver</code>. Copy debugserver back to the device, give it executive permission.</p>
 
@@ -158,10 +146,13 @@ Attaching to process SpringBoard...
 Listening to port 6666 for a connection from localhost...
 </code></pre>
 
-<p>At this point, you should have 2 or 3 tabs open:
-1. <code>iproxy 2222 22</code>
-2. <code>iproxy 6666 6666</code> - for debugserver
-3. <code>ssh connection to iphone</code> - this applies only if you are connecting over ssh to iphone instead of terminal app</p>
+<p>At this point, you should have 2 or 3 tabs open:</p>
+
+<ol>
+<li><code>iproxy 2222 22</code></li>
+<li><code>iproxy 6666 6666</code> - for debugserver</li>
+<li><code>ssh connection to iphone</code> - this applies only if you are connecting over ssh to iphone instead of terminal app</li>
+</ol>
 
 <p>Now create another terminal tab and type <code>lldb</code> and then type <code>process connect connect://127.0.0.1:6666</code>. Output will look something like this:</p>
 
